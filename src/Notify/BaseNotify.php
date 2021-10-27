@@ -1,11 +1,10 @@
 <?php
 
 
-namespace ymlluo\Notify;
+namespace Ymlluo\Notify;
 
 
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Http;
 
 class BaseNotify
 {

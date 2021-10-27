@@ -1,6 +1,6 @@
 <?php
 
-namespace ymlluo\Contracts;
+namespace Ymlluo\Contracts;
 
 interface Message
 {

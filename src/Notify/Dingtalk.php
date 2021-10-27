@@ -6,7 +6,7 @@ namespace Ymlluo\Notify;
 
 use Ymlluo\Contracts\Channel;
 
-class Feishu extends BaseNotify implements Channel
+class Dingtalk extends BaseNotify implements Channel
 {
 
     public function text(string $content, array $at = [])

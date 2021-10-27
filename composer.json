@@ -1,18 +1,22 @@
 {
-    "name": "ymlluo/grouprobot",
+    "name": "ymlluo/group-robot",
     "description": ":package_description",
     "license": "MIT",
     "authors": [
         {
-            "name": "Author Name",
-            "email": "author@email.com",
-            "homepage": "http://author.com"
+            "name": "Ymlluo",
+            "email": "ymlluo@gmail.com",
+            "homepage": "https://github.com/ymlluo"
         }
     ],
-    "homepage": "https://github.com/ymlluo/grouprobot",
+    "homepage": "https://github.com/ymlluo/group-robot",
     "keywords": ["Laravel", "GroupRobot"],
     "require": {
-        "illuminate/support": "~7|~8"
+        "php": "^7.1",
+        "ext-zip": "*",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "~6"
     },
     "require-dev": {
         "phpunit/phpunit": "~9.0",

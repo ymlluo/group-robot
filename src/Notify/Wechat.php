@@ -1,11 +1,9 @@
 <?php
 
 
-namespace ymlluo\Notify;
+namespace Ymlluo\Notify;
 
-
-use phpDocumentor\Reflection\Types\This;
-use ymlluo\Contracts\Channel;
+use Ymlluo\Contracts\Channel;
 
 class Wechat extends BaseNotify implements Channel
 {
