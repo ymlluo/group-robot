@@ -1,44 +1,60 @@
-# GroupRobot
+# 群组机器人
 
-[![Latest Version on Packagist][ico-version]][link-packagist]
-[![Total Downloads][ico-downloads]][link-downloads]
-[![Build Status][ico-travis]][link-travis]
-[![StyleCI][ico-styleci]][link-styleci]
+[comment]: <> ([![Latest Version on Packagist][ico-version]][link-packagist])
 
-This is where your description should go. Take a look at [contributing.md](contributing.md) to see a to do list.
+[comment]: <> ([![Total Downloads][ico-downloads]][link-downloads])
+
+[comment]: <> ([![Build Status][ico-travis]][link-travis])
+
+[comment]: <> ([![StyleCI][ico-styleci]][link-styleci])
+
+[comment]: <> (This is where your description should go. Take a look at [contributing.md]&#40;contributing.md&#41; to see a to do list.)
 
 ## Installation
 
 Via Composer
 
 ``` bash
-$ composer require ymlluo/grouprobot
+$ composer require ymlluo/group-robot
 ```
 
 ## Usage
 
-## Change log
+```php
+$robot = new \Ymlluo\GroupRobot\GroupRobot('wechat');
+$robot->setWebhook('http://xxxx')->text("hello world")->send();
+$robot->setWebhook('http://xxxx')->image("/tmp/1.png")->send();
+$robot->setWebhook('http://xxxx')->image("https://www.baidu.com/1.png")->send();
+$robot->setWebhook('http://xxxx')->file("/tmp/1.zip")->send();
 
-Please see the [changelog](changelog.md) for more information on what has changed recently.
 
-## Testing
-
-``` bash
-$ composer test
 ```
 
-## Contributing
+## Change log
 
-Please see [contributing.md](contributing.md) for details and a todolist.
+[comment]: <> (Please see the [changelog]&#40;changelog.md&#41; for more information on what has changed recently.)
+
+[comment]: <> (## Testing)
+
+[comment]: <> (``` bash)
+
+[comment]: <> ($ composer test)
+
+[comment]: <> (```)
+
+[comment]: <> (## Contributing)
+
+[comment]: <> (Please see [contributing.md]&#40;contributing.md&#41; for details and a todolist.)
 
 ## Security
 
-If you discover any security related issues, please email author@email.com instead of using the issue tracker.
+If you discover any security related issues, please email ymlluo@gmail.com instead of using the issue tracker.
 
-## Credits
+[comment]: <> (## Credits)
 
-- [Author Name][link-author]
-- [All Contributors][link-contributors]
+[comment]: <> (- [Author Name][link-author])
+
+[comment]: <> (- [All Contributors][link-contributors])
 
 ## License
 
