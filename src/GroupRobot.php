@@ -10,11 +10,11 @@ use Ymlluo\GroupRobot\Notify\Wechat;
 class GroupRobot
 {
     public $channel;
-    public $configs =[];
+    public $configs = [];
 
-    public function __construct($channel = '',$webhook='')
+    public function __construct($channel = '', $webhook = '')
     {
-        if ($channel){
+        if ($channel) {
             $this->channel = $this->resolve($channel);
             $this->channel->to($webhook);
         }
@@ -30,7 +30,6 @@ class GroupRobot
         $this->channel = $channel;
     }
 
-
     protected function resolve($name)
     {
         if (!$name) {
@@ -38,7 +37,7 @@ class GroupRobot
         }
         $method = ucfirst($name) . 'Notify';
         if (method_exists($this, $method)) {
-           return call_user_func([$this,$method]);
+            return call_user_func([$this, $method]);
         } else {
             throw new InvalidArgumentException("Channel [{$name}] is not supported.");
         }
@@ -48,9 +47,9 @@ class GroupRobot
     /**
      * 飞书
      */
-    public function FeishuNotify()
+    protected function FeishuNotify()
     {
-       return new Feishu();
+        return new Feishu();
     }
 
     /**
@@ -58,15 +57,15 @@ class GroupRobot
      *
      * @return Wechat
      */
-    public function WechatNotify()
+    protected function WechatNotify()
     {
-      return new Wechat();
+        return new Wechat();
     }
 
     /**
      * 钉钉
      */
-    public function DingtalkNotify()
+    protected function DingtalkNotify()
     {
         return new Dingtalk();
     }
