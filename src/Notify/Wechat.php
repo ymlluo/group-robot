@@ -1,13 +1,21 @@
 <?php
 
 
-namespace Ymlluo\Notify;
+namespace Ymlluo\GroupRobot\Notify;
 
-use Ymlluo\Contracts\Channel;
+use Ymlluo\GroupRobot\Contracts\Channel;
 
 class Wechat extends BaseNotify implements Channel
 {
+    public $filePending = null;
 
+    /**
+     * 文本消息
+     *
+     * @param string $content
+     * @param array $at
+     * @return $this|mixed
+     */
     public function text(string $content, array $at = [])
     {
         $this->message = [
@@ -17,11 +25,18 @@ class Wechat extends BaseNotify implements Channel
             ]
         ];
         if ($at) {
-            $this->message = array_merge($this->message['text'], $at);
+            $this->message['text'] = array_merge($this->message['text'], $at);
         }
         return $this;
     }
 
+    /**
+     *  markdown 消息
+     *
+     * @param string $markdown
+     * @param array $at
+     * @return $this|mixed
+     */
     public function markdown(string $markdown, array $at = [])
     {
         $this->message = [
@@ -31,44 +46,65 @@ class Wechat extends BaseNotify implements Channel
             ]
         ];
         if ($at) {
-            $this->message = array_merge($this->message['markdown'], $at);
+            $this->message['markdown'] = array_merge($this->message['markdown'], $at);
         }
         return $this;
     }
 
+    /**
+     * 富文本消息
+     *
+     * @param array $content
+     * @param array $at
+     * @return mixed|void
+     * @throws \Exception
+     */
     public function rich(array $content, array $at = [])
     {
         throw new \Exception("channel don't support rice message");
     }
 
+    /**
+     * 文件消息
+     *
+     * @param string $path
+     * @param string $filename
+     * @return $this|mixed
+     */
     public function file(string $path, string $filename = '')
     {
-        $this->message = [
-            'msgtype' => 'file',
-            'file' => [
-                'media_id' => $this->getWechatMediaIdByFile($path, $filename)
-            ]
-        ];
+        $this->filePending = ['path' => $path, 'filename' => $filename];
         return $this;
     }
 
-    public function image(string $img)
-    {
-        if (filter_var($img, FILTER_VALIDATE_URL)) {
-            $extension = pathinfo(parse_url($img, PHP_URL_PATH), PATHINFO_EXTENSION);
-            $path = tempnam(sys_get_temp_dir(), uniqid() . '.' . $extension);
 
+    /**
+     *  图片消息
+     *
+     * @param string $path
+     * @return $this|mixed
+     */
+    public function image(string $path)
+    {
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            $path = $this->downloadFile($path);
         }
         $this->message = [
             'msgtype' => 'image',
             'image' => [
-                'base64' => base64_encode(file_get_contents($img)),
-                'md5' => md5($img)
+                'base64' => base64_encode(file_get_contents($path)),
+                'md5' => md5_file($path)
             ]
         ];
         return $this;
     }
 
+    /**
+     * 图文消息
+     *
+     * @param array $news
+     * @return $this|mixed
+     */
     public function news(array $news)
     {
         $this->message = [
@@ -80,6 +116,12 @@ class Wechat extends BaseNotify implements Channel
         return $this;
     }
 
+    /**
+     * 卡片消息
+     *
+     * @param array $card
+     * @return $this|mixed
+     */
     public function card(array $card)
     {
         $this->message = [
@@ -90,20 +132,25 @@ class Wechat extends BaseNotify implements Channel
     }
 
 
-    protected function getWechatMediaIdByFile($path, $filename = '')
+    /**
+     * 上传本地文件换取 media_id 并设置消息
+     *
+     * @param $webhook
+     * @return $this
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    protected function handleFile($webhook)
     {
+        $path = $this->filePending['path'];
+        $filename = $this->filePending['filename'];
+
         if (filter_var($path, FILTER_VALIDATE_URL)) {
-            $extension = pathinfo(parse_url($path, PHP_URL_PATH), PATHINFO_EXTENSION);
-            $path = tempnam(sys_get_temp_dir(), uniqid() . '.' . $extension);
-        }
-        $fileHash = md5($path);
-        if ($cache = cache()->get("WX:MEDIA:ID:$fileHash")) {
-            return $cache;
+            $path = $this->downloadFile($path);
         }
         if (!file_exists($path)) {
             throw new \Exception("file not exists");
         }
-        parse_str(data_get(parse_url($this->webhook), 'query', ''), $q);
+        parse_str(data_get(parse_url($webhook), 'query', ''), $q);
         if (!$key = data_get($q, 'key')) {
             throw new \Exception("get key from url error");
         }
@@ -111,21 +158,61 @@ class Wechat extends BaseNotify implements Channel
             $filename = basename($path);
         }
         $url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key=$key&type=file";
-        $res = $this->httpClient()->post($url, [
+        $res = $this->httpClient->post($url, [
             'multipart' => [
-                'name' => 'media',
-                'content' => file_get_contents($path),
-                'filename' => $filename
+                [
+                    'name' => 'media',
+                    'contents' => file_get_contents($path),
+                    'filename' => $filename
+                ]
             ]
         ]);
         if ($res->getStatusCode() === 200) {
-            $json = json_decode($res->getBody());
-            $media_id = $json['media_id'];
-            cache()->set("WX:MEDIA:ID:$fileHash", $media_id, 86400);
-//            unlink($path);
-            return $media_id;
+            $json = json_decode($res->getBody(), true);
+            if ($media_id = $json['media_id'] ?? null) {
+                $this->message = [
+                    'msgtype' => 'file',
+                    'file' => [
+                        'media_id' => $media_id
+                    ]
+                ];
+                return $this;
+            } else {
+                throw new \Exception('get media id error');
+            }
+
+
         }
         throw new \Exception('upload file to wechat server error', 10012);
+    }
+
+    /**
+     * 从 url 下载文件到本地
+     *
+     * @param $url
+     * @return false|string
+     */
+    protected function downloadFile($url)
+    {
+        $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+        $path = tempnam(sys_get_temp_dir(),'') . '.' . $extension;
+        $this->httpClient->request('GET',$url,['sink'=>$path]);
+        return $path;
+    }
+
+    /**
+     * 发送消息
+     *
+     * @param string|null $webhook
+     * @return array|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function send(string $webhook = '')
+    {
+        if ($this->filePending) {
+            $this->handleFile($webhook);
+        }
+        return parent::send($webhook);
     }
 
 }

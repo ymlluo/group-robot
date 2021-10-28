@@ -1,10 +1,11 @@
 <?php
 
 
-namespace Ymlluo\Notify;
+namespace Ymlluo\GroupRobot\Notify;
 
 
 use GuzzleHttp\Client;
+use Psr\Http\Client\ClientInterface;
 use Ymlluo\GroupRobot\GroupRobot;
 
 class BaseNotify
@@ -15,15 +16,21 @@ class BaseNotify
 
     public $httpClient;
 
+    public function __construct()
+    {
+        $this->httpClient = new Client();
+    }
 
     /**
      * set webhook url
      *
-     * @param string $webhook
+     * @param $webhook
+     * @return $this
      */
-    public function setWebhook(string $webhook)
+    public function to(string $webhook)
     {
         $this->webhook = $webhook;
+        return $this;
     }
 
     /**
@@ -37,36 +44,36 @@ class BaseNotify
     }
 
     /**
-     * send message
+     * 发送消息
      *
-     * @return mixed|\Psr\Http\Message\StreamInterface
+     * @param null $webhook
+     * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function send()
+    public function send(string $webhook = '')
     {
         if (!isset($this->message)) {
             throw new \Exception('message not set!');
         }
+        if ($webhook) {
+            $this->webhook = $webhook;
+        }
         if (!$this->webhook) {
             throw new \Exception('webhook not set');
         }
-        $response = $this->httpClient()->post($this->webhook, ['json'=>$this->message,'http_errors'=>false]);
-        if ($response->getStatusCode() === 200){
-            return json_decode($response->getBody(),true);
-        }
-        return $response->getBody();
+        $response = $this->httpClient->post($webhook, ['json' => $this->message, 'http_errors' => false]);
+        $result = json_decode((string)$response->getBody(), true);
+        return ['params' => $this->message, 'result' => $result];
     }
 
     /**
-     * Http client
-     *
-     * @return Client
+     * 自定义 Guzzle 配置项
+     * @param array $config
+     * @return $this
      */
-    public function httpClient()
+    public function setClient($config = [])
     {
-        $this->httpClient = new Client();
-        return $this->httpClient;
+        $this->httpClient = new Client($config);
+        return $this;
     }
-
-
 }

@@ -1,32 +1,35 @@
 <?php
 
 
-namespace Ymlluo\Contracts;
+namespace Ymlluo\GroupRobot\Contracts;
 
+
+use phpDocumentor\Reflection\Types\Mixed_;
 
 interface Channel
 {
 
     /**
      * 设置 webhook 地址
-     * @param string $webhook
+     * @param mixed $webhook
      * @return mixed
      */
-    public function setWebhook(string $webhook);
+    public function to(string $webhook);
 
     /**
      * 发送消息
      *
+     * @param null $webhook
      * @return mixed
      */
-    public function send();
+    public function send(string $webhook = '');
 
 
     /**
      * 纯文本消息
      *
      * @param string $content
-     * @param  array $at
+     * @param array $at
      * @return mixed
      */
     public function text(string $content, array $at = []);
@@ -62,10 +65,10 @@ interface Channel
     /**
      * 图片消息
      *
-     * @param string $img
+     * @param string $path
      * @return mixed
      */
-    public function image(string $img);
+    public function image(string $path);
 
     /**
      * 图文消息

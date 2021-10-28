@@ -2,25 +2,19 @@
 
 namespace Ymlluo\GroupRobot;
 
-use Ymlluo\Contracts\Channel;
-use Ymlluo\Notify\Dingtalk;
-use Ymlluo\Notify\Feishu;
-use Ymlluo\Notify\Wechat;
+use Ymlluo\GroupRobot\Contracts\Channel;
+use Ymlluo\GroupRobot\Notify\Dingtalk;
+use Ymlluo\GroupRobot\Notify\Feishu;
+use Ymlluo\GroupRobot\Notify\Wechat;
 
 class GroupRobot
 {
-    protected $channel;
+    public $channel;
     public $configs =[];
 
-    public function __construct($channel = '',$configs = [])
+    public function __construct($channel = '')
     {
         $this->channel = $this->resolve($channel);
-        if ($configs){
-            $this->configs = $configs;
-        }else{
-            $this->configs = [];
-        }
-        $this->configs = $configs;
     }
 
     /**
@@ -36,12 +30,11 @@ class GroupRobot
     protected function resolve($name)
     {
         if (!$name) {
-            return $this;
+            return null;
         }
         $method = ucfirst($name) . 'Notify';
-
         if (method_exists($this, $method)) {
-            return $this->{$method};
+           return call_user_func([$this,$method]);
         } else {
             throw new InvalidArgumentException("Channel [{$name}] is not supported.");
         }
@@ -50,37 +43,28 @@ class GroupRobot
 
     /**
      * 飞书
-     *
-     * @return $this
      */
     public function FeishuNotify()
     {
-        $this->channel = new Feishu();
-        return $this;
+       return new Feishu();
     }
 
     /**
      * 企业微信
      *
-     * @return $this
+     * @return Wechat
      */
     public function WechatNotify()
     {
-        $this->channel = new Wechat();
-        return $this;
-
+      return new Wechat();
     }
 
     /**
      * 钉钉
-     *
-     * @return $this
      */
     public function DingtalkNotify()
     {
-        $this->channel = new Dingtalk();
-        return $this;
-
+        return new Dingtalk();
     }
 
 
@@ -97,6 +81,5 @@ class GroupRobot
     {
         return call_user_func_array([$this->channel, $method], $parameters);
     }
-
 
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ymlluo\Contracts;
+namespace Ymlluo\GroupRobot\Contracts;
 
 interface Message
 {

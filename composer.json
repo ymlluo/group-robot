@@ -16,7 +16,7 @@
         "ext-zip": "*",
         "ext-curl": "*",
         "ext-json": "*",
-        "guzzlehttp/guzzle": "~6"
+        "guzzlehttp/guzzle": "^7.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~9.0",

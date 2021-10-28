@@ -1,10 +1,10 @@
 <?php
 
 
-namespace Ymlluo\Notify;
+namespace Ymlluo\GroupRobot\Notify;
 
 
-use Ymlluo\Contracts\Channel;
+use Ymlluo\GroupRobot\Contracts\Channel;
 
 class Dingtalk extends BaseNotify implements Channel
 {
