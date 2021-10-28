@@ -10,10 +10,17 @@ use Ymlluo\Notify\Wechat;
 class GroupRobot
 {
     protected $channel;
+    public $configs =[];
 
-    public function __construct($channel = '')
+    public function __construct($channel = '',$configs = [])
     {
         $this->channel = $this->resolve($channel);
+        if ($configs){
+            $this->configs = $configs;
+        }else{
+            $this->configs = [];
+        }
+        $this->configs = $configs;
     }
 
     /**

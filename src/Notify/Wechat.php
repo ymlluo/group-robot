@@ -56,7 +56,8 @@ class Wechat extends BaseNotify implements Channel
     {
         if (filter_var($img, FILTER_VALIDATE_URL)) {
             $extension = pathinfo(parse_url($img, PHP_URL_PATH), PATHINFO_EXTENSION);
-            $img = tempnam(sys_get_temp_dir(), uniqid() . '.' . $extension);
+            $path = tempnam(sys_get_temp_dir(), uniqid() . '.' . $extension);
+
         }
         $this->message = [
             'msgtype' => 'image',
@@ -91,6 +92,10 @@ class Wechat extends BaseNotify implements Channel
 
     protected function getWechatMediaIdByFile($path, $filename = '')
     {
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            $extension = pathinfo(parse_url($path, PHP_URL_PATH), PATHINFO_EXTENSION);
+            $path = tempnam(sys_get_temp_dir(), uniqid() . '.' . $extension);
+        }
         $fileHash = md5($path);
         if ($cache = cache()->get("WX:MEDIA:ID:$fileHash")) {
             return $cache;
