@@ -12,9 +12,13 @@ class GroupRobot
     public $channel;
     public $configs =[];
 
-    public function __construct($channel = '')
+    public function __construct($channel = '',$webhook='')
     {
-        $this->channel = $this->resolve($channel);
+        if ($channel){
+            $this->channel = $this->resolve($channel);
+            $this->channel->to($webhook);
+        }
+
     }
 
     /**

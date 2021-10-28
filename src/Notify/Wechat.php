@@ -158,7 +158,7 @@ class Wechat extends BaseNotify implements Channel
             $filename = basename($path);
         }
         $url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key=$key&type=file";
-        $res = $this->httpClient->post($url, [
+        $res = $this->getClient()->post($url, [
             'multipart' => [
                 [
                     'name' => 'media',
@@ -196,7 +196,7 @@ class Wechat extends BaseNotify implements Channel
     {
         $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
         $path = tempnam(sys_get_temp_dir(),'') . '.' . $extension;
-        $this->httpClient->request('GET',$url,['sink'=>$path]);
+        $this->getClient()->request('GET',$url,['sink'=>$path,'verify'=>false]);
         return $path;
     }
 
@@ -209,10 +209,13 @@ class Wechat extends BaseNotify implements Channel
      */
     public function send(string $webhook = '')
     {
-        if ($this->filePending) {
-            $this->handleFile($webhook);
+        if ($webhook){
+            $this->webhook = $webhook;
         }
-        return parent::send($webhook);
+        if ($this->filePending) {
+            $this->handleFile($this->webhook);
+        }
+        return parent::send($this->webhook);
     }
 
 }

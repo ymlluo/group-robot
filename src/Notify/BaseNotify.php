@@ -14,11 +14,9 @@ class BaseNotify
 
     public $message;
 
-    public $httpClient;
 
     public function __construct()
     {
-        $this->httpClient = new Client();
     }
 
     /**
@@ -61,19 +59,18 @@ class BaseNotify
         if (!$this->webhook) {
             throw new \Exception('webhook not set');
         }
-        $response = $this->httpClient->post($webhook, ['json' => $this->message, 'http_errors' => false]);
+
+        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false,'verify'=>false]);
         $result = json_decode((string)$response->getBody(), true);
         return ['params' => $this->message, 'result' => $result];
     }
 
     /**
-     * 自定义 Guzzle 配置项
      * @param array $config
-     * @return $this
+     * @return Client
      */
-    public function setClient($config = [])
+    public function getClient($config = [])
     {
-        $this->httpClient = new Client($config);
-        return $this;
+        return new Client($config);
     }
 }
