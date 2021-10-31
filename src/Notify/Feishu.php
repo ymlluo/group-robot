@@ -11,29 +11,40 @@ class Feishu extends BaseNotify implements Channel
 
     public function text(string $content)
     {
+        $this->message_at_type = 'text';
         $this->message = [
             'msg_type' => 'text',
-            'content' => json_encode(['text' => $content], JSON_UNESCAPED_UNICODE)
+            'content' => [
+                'text' => $content
+            ],
+            'at_allow' => true,
+            'at_append' => 'concat'
         ];
+        $this->addQueue();
         return $this;
     }
 
     public function rich(array $data)
     {
+        $this->message_at_type = 'rich';
         $this->message = [
             'msg_type' => 'post',
-            'content' => json_encode([
+            'content' => [
                 'post' => [
                     'zh_cn' => $data
                 ]
-            ], JSON_UNESCAPED_UNICODE)
+            ],
+            'at_allow' => true,
+            'at_append' => 'merge'
         ];
+        $this->addQueue();
         return $this;
     }
 
 
     public function markdown(string $markdown, string $title = '')
     {
+        $this->message_at_type = 'interactive';
         $this->message = [
             'msg_type' => 'interactive',
             'card' => [
@@ -47,7 +58,9 @@ class Feishu extends BaseNotify implements Channel
                         'content' => $markdown
                     ]
                 ]
-            ]
+            ],
+            'at_allow' => true,
+            'at_append' => 'concat'
         ];
         if ($title) {
             $this->message['card']['header'] = [
@@ -57,6 +70,7 @@ class Feishu extends BaseNotify implements Channel
                 ]
             ];
         }
+        $this->addQueue();
         return $this;
     }
 
@@ -134,6 +148,7 @@ class Feishu extends BaseNotify implements Channel
             ]
 
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -150,6 +165,7 @@ class Feishu extends BaseNotify implements Channel
             'card' => $data
 
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -165,23 +181,22 @@ class Feishu extends BaseNotify implements Channel
 
     public function atAll(bool $isAll = true)
     {
-        $array = json_decode($this->message['content'], true);
-        switch ($this->message_type) {
+        switch ($this->message_at_type) {
             case 'text':
-                $array['text'] = $array['text'] . "<at user_id=\"all\">所有人</at>";
+                $this->message_at['content']['text'] = "<at user_id=\"all\">所有人</at>";
                 break;
-            case 'markdown':
-                foreach ($array['card']['elements'] as $i => $element) {
+            case 'interactive':
+                foreach ($this->message['card']['elements'] as $i => $element) {
                     if ($element['tag'] === 'markdown') {
-                        $array['card']['elements'][$i]['content'] .= '<at id=all></at>';
+                        $this->message_at['card']['elements'][$i]['content'] = '<at id=all></at>';
                     }
                 }
                 break;
             case 'rich':
-                $array[] = ['tag' => 'at', 'user_id' => 'all', 'user_name' => '所有人'];
+                $this->message_at['content']['post']['zh_cn'][] = ['tag' => 'at', 'user_id' => 'all', 'user_name' => '所有人'];
                 break;
         }
-        $this->message['content'] = json_encode($array, JSON_UNESCAPED_UNICODE);
+        return $this;
     }
 
 

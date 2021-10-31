@@ -5,9 +5,6 @@ namespace Ymlluo\GroupRobot\Notify;
 
 
 use GuzzleHttp\Client;
-use Psr\Http\Client\ClientInterface;
-use Ymlluo\GroupRobot\Contracts\Channel;
-use Ymlluo\GroupRobot\GroupRobot;
 
 class BaseNotify
 {
@@ -15,9 +12,13 @@ class BaseNotify
 
     public $message;
 
-    public $file_queues = null;
+    public $use_queue = false;
 
-    public $message_type;
+    public $message_queues = [];
+
+    public $message_at = [];
+
+    public $message_at_type;
 
     protected $secret;
 
@@ -56,11 +57,25 @@ class BaseNotify
     public function raw(array $data)
     {
         $this->message = $data;
+        $this->addQueue();
     }
 
     protected function handleFile()
     {
         throw new \Exception("channel handleFile function not set");
+    }
+
+    public function queue()
+    {
+        $this->use_queue = true;
+        return $this;
+    }
+
+    public function addQueue()
+    {
+        if ($this->use_queue) {
+            $this->message_queues[] = $this->message;
+        }
     }
 
 
@@ -95,15 +110,35 @@ class BaseNotify
         if ($this->secret) {
             $this->makeSignature();
         }
-        if ($this->file_queues) {
+        if ($this->message_queues) {
+            $this->message = array_shift($this->message_queues);
+        }
+        if (isset($this->message['file_queue'])) {
             $this->handleFile();
         }
         if (!isset($this->message)) {
             throw new \Exception('message not set!');
         }
+
+        if (isset($this->message['at_allow']) && $this->message['at_allow']) {
+            if ($this->message_at) {
+                if (isset($this->message['at_append'])) {
+                    $concat = $this->message['at_append'] === 'concat';
+                    $this->array_append($this->message, $this->message_at, $concat);
+                }
+                if (isset($this->message['at_key'])) {
+                    $this->array_append($this->message, [$this->message['at_key'] => $this->message_at]);
+                }
+            }
+            unset($this->message['at_allow'], $this->message['at_key'], $this->message['at_concat'], $this->message['at_append']);
+        }
+
         $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false]);
         $result = json_decode((string)$response->getBody(), true);
         $this->result = $result;
+        if ($this->message_queues) {
+            return $this->send();
+        }
         return $result;
     }
 
@@ -125,5 +160,55 @@ class BaseNotify
     {
         return new Client($config);
     }
+
+    /**
+     * 补充信息
+     *
+     * @param $array
+     * @param $append
+     * @param false $concat
+     */
+    protected function array_append(&$array, $append, $concat = false)
+    {
+        if (is_array($append)) {
+            foreach ($append as $k => $value) {
+                if (isset($array[$k])) {
+                    if (is_array($array[$k])) {
+                        $this->array_append($array[$k], $value, $concat);
+                    } else {
+                        if ($concat) {
+                            $array[$k] .= $value;
+                        }
+                    }
+                } else {
+                    $array[$k] = $value;
+                }
+            }
+        }
+
+    }
+
+    /**
+     * 分割字符串
+     *
+     * @param string $string
+     * @param int $maxLength
+     * @param string $separator
+     * @return array
+     */
+    protected function chunk_strings(string $string, int $maxLength, string $separator = "\n")
+    {
+        do {
+            $msg = substr($string, 0, $maxLength);
+            $split = substr($msg, 0, intval(strripos($msg, $separator)) ?: $maxLength);
+            $string = substr($string, strlen($split));
+            $queues[] = $split;
+        } while (strlen($string) >= $maxLength);
+        if (strlen($string)) {
+            $queues[] = $string;
+        }
+        return $queues;
+    }
+
 
 }

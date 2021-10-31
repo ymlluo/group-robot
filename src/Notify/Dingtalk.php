@@ -11,27 +11,32 @@ class Dingtalk extends BaseNotify implements Channel
 
     public function text(string $content)
     {
-        $this->message_type = 'text';
-
+        $this->message_at_type = 'text';
         $this->message = [
             'msgtype' => 'text',
             'text' => [
                 'content' => $content
-            ]
+            ],
+            'at_allow'=>true,
+            'at_append'=>'merge'
         ];
+        $this->addQueue();
         return $this;
     }
 
     public function markdown(string $markdown, string $title = '')
     {
-        $this->message_type = 'markdown';
+        $this->message_at_type = 'markdown';
         $this->message = [
             'msgtype' => 'markdown',
             'markdown' => [
                 'title' => $title ?? "图文消息",
                 'text' => $markdown
-            ]
+            ],
+            'at_allow'=>true,
+            'at_append'=>'merge'
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -71,6 +76,7 @@ class Dingtalk extends BaseNotify implements Channel
                 'messageUrl' => $data['messageUrl'] ?? $data['url'] ?? ''
             ]
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -94,6 +100,7 @@ class Dingtalk extends BaseNotify implements Channel
                 }, $lists)
             ]
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -122,6 +129,7 @@ class Dingtalk extends BaseNotify implements Channel
             }
 
         }
+        $this->addQueue();
 
         return $this;
     }
@@ -138,6 +146,7 @@ class Dingtalk extends BaseNotify implements Channel
             'msgtype' => 'actionCard',
             'actionCard' => $data
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -149,12 +158,11 @@ class Dingtalk extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atUsers(array $userIds, bool $isAll=false)
+    public function atUsers(array $userIds, bool $isAll = false)
     {
-        if ($this->message_type) {
-            $this->message['at']['atUserIds'] = array_merge((array)$this->message['at']['atUserIds'] ?? [], $userIds);
-            $this->atAll($isAll);
-        }
+        $this->message_at['at']['atUserIds'] = $userIds;
+        $this->atAll($isAll);
+        return $this;
     }
 
     /**
@@ -164,19 +172,18 @@ class Dingtalk extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atMobiles(array $phoneNums, bool $isAll=false)
+    public function atMobiles(array $phoneNums, bool $isAll = false)
     {
-        if ($this->message_type) {
-            $this->message['at']['atMobiles'] = array_merge((array)$this->message['at']['atMobiles'] ?? [], $phoneNums);
-            $this->atAll($isAll);
-        }
+        $this->message_at['at']['atMobiles'] = array_merge((array)$this->message_at['at']['atMobiles']??[],$phoneNums);
+        $this->atAll($isAll);
+        return $this;
+
     }
 
-    public function atAll(bool $isAll=true)
+    public function atAll(bool $isAll = true)
     {
-        if ($this->message_type) {
-            $this->message['at']['isAtAll'] = $isAll;
-        }
+        $this->message_at['at']['isAtAll'] = $isAll;
+        return $this;
     }
 
 

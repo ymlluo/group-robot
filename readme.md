@@ -63,9 +63,9 @@ Table of Contents
         * [消息卡片](#消息卡片)
         * [富文本](#富文本)
     * [Laravel 支持](#laravel-支持)
-    * [进阶用法 - 自定义发送渠道](#进阶用法---自定义发送渠道)
+    * [进阶用法](#进阶用法)
+        * [使用队列同时发送多条消息](#使用队列同时发送多条消息)
         * [定义渠道](#定义渠道)
-        * [发送消息](#发送消息)
     * [Contributing](#contributing)
     * [Security](#security)
     * [License](#license)
@@ -113,6 +113,9 @@ $robot->raw(['msgtype'='text','content'=>['text'=>'hello world!']])->send();
 ```
 
 ### 文本
+* 支持 @全部、@用户、@手机号
+* 文本内容，单条最多2048个字节。
+* 发送内容超过 2048 个字节，会分成多条发送（使用 \n 分割）
 
 ``` php 
 $robot->text('hello world')->send();
@@ -134,6 +137,8 @@ $robot->text('hello world')->atMobiles(["13800001111"],false)->send();
 ```
 
 ### Markdown
+* markdown内容，最长不超过 4096 个字节。
+* 发送内容超过 4096 个字节，会拆分成多条发送（使用 \n 分割）
 
 ```php
  $robot->markdown("实时新增用户反馈<font color=\"warning\">132例</font>，请相关同事注意。")->send();
@@ -331,7 +336,7 @@ $robot->raw(['msgtype'='text','text'=>['content'=>'hello world!']])->send();
 ```
 
 ### 文本
-
+* 支持 @全部、@用户、@手机号
 ``` php 
 $robot->text('hello world')->send();
 ```
@@ -352,6 +357,7 @@ $robot->text('hello world')->atMobiles(["13800001111"],false)->send();
 ```
 
 ### Markdown
+* 支持 @全部、@用户、@手机号
 * 目前只支持markdown语法的子集
 * 参考文档： [markdown语法](https://developers.dingtalk.com/document/robots/custom-robot-access/title-72m-8ag-pqw)
 ```php
@@ -528,7 +534,7 @@ $robot->raw(['msgtype'='text','content'=>['text'=>'hello world!']])->send();
 ```
 
 ### 文本
-
+* 仅支持 @全部
 ``` php 
 $robot->text('hello world')->send();
 ```
@@ -538,6 +544,7 @@ $robot->text('hello world')->send();
 * 无法使用与文本格式无关的markdown标签（比如图片、分割线）
 * 目前只支持 markdown 语法的子集，支持的有限元素。
 * 文档参考： [消息卡片构造卡片内容Markdown模块](https://open.feishu.cn/document/ukTMukTMukTM/uADOwUjLwgDM14CM4ATN)
+* 仅支持 @全部
 
 ```php
 $robot->markdown("#### 杭州天气 \n > 9度，西北风1级，空气良89，相对温度73%\n > ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png) \n", '杭州天气')->send();
@@ -613,6 +620,8 @@ $robot->interactive([
 ```
 
 ### 富文本
+* 仅支持 @全部
+
 ```php 
 $robot->rich([
   'title' => '项目更新',
@@ -654,10 +663,26 @@ dd($result);
 ```
 
 ------
-## 进阶用法 - 自定义发送渠道
-> 可以实现 src/Contracts/Channel.php 接口，通过自定义渠道发送消息
+## 进阶用法 
+
+### 使用队列同时发送多条消息
+* 使用 queue() 方法可以把消息放到队列中，分别发送
+```php 
+$robot->queue()
+  ->text("文本消息1")
+  ->text("文本消息2")
+  ->markdown("**Markdown**")
+  ->file("http://h10032.www1.hp.com/ctg/Manual/c05440029.pdf", "HP 2600打印机说明书.pdf")
+  ->send();
+```
+
+
+
+
+
 
 ### 定义渠道
+> 可以实现 src/Contracts/Channel.php 接口，通过自定义渠道发送消息
 ```php 
 <?php
 
@@ -672,12 +697,11 @@ class CustomerChannel extends BaseNotify implements Channel
 }
 
 ```
-### 发送消息
 
 ```php 
 $webhook = 'https://xxx.com/webhook/xxx';
 $robot = new GroupRobot();
-$robot->extendChannel(new CustomerChannel::class)->to($webhook)->text("hello !")->send();
+$robot->extendChannel(new CustomerChannel())->to($webhook)->text("hello !")->send();
 ```
 ------
 

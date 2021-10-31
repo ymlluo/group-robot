@@ -7,6 +7,9 @@ use Ymlluo\GroupRobot\Contracts\Channel;
 
 class Wechat extends BaseNotify implements Channel
 {
+    public $max_text_length = 2048;
+    public $max_md_length = 4096;
+
     /**
      * 文本消息
      *
@@ -16,13 +19,23 @@ class Wechat extends BaseNotify implements Channel
      */
     public function text(string $content)
     {
-        $this->message_type = 'text';
+        if (strlen($content) > $this->max_text_length) {
+            $this->queue();
+            $lists = $this->chunk_strings($content, $this->max_text_length);
+            foreach ($lists as $text) {
+                $this->text($text);
+            }
+            return $this;
+        }
         $this->message = [
             'msgtype' => 'text',
             'text' => [
                 'content' => $content
-            ]
+            ],
+            'at_allow' => true,
+            'at_key' => 'text'
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -35,12 +48,22 @@ class Wechat extends BaseNotify implements Channel
      */
     public function markdown(string $markdown, string $title = '')
     {
+        if (strlen($markdown) > $this->max_md_length) {
+            $this->queue();
+            $lists = $this->chunk_strings($markdown, $this->max_text_length);
+            foreach ($lists as $text) {
+                $this->markdown($text, $title);
+            }
+            return $this;
+        }
+
         $this->message = [
             'msgtype' => 'markdown',
             'markdown' => [
                 'content' => $markdown
             ]
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -53,7 +76,8 @@ class Wechat extends BaseNotify implements Channel
      */
     public function file(string $path, string $filename = '')
     {
-        $this->file_queues = ['path' => $path, 'filename' => $filename];
+        $this->message['file_queue'] = ['path' => $path, 'filename' => $filename];
+        $this->addQueue();
         return $this;
     }
 
@@ -76,6 +100,7 @@ class Wechat extends BaseNotify implements Channel
                 'md5' => md5_file($path)
             ]
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -93,6 +118,7 @@ class Wechat extends BaseNotify implements Channel
                 'articles' => isset($news['title']) ? [$news] : $news
             ]
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -116,7 +142,7 @@ class Wechat extends BaseNotify implements Channel
                         'title' => $btn['title'] ?? '',
                         'url' => $btn['url'] ?? '',
                     ];
-                }, array_slice($buttons,0,3)),
+                }, array_slice($buttons, 0, 3)),
                 'card_action' => [
                     'type' => 1,
                     'url' => $url,
@@ -124,6 +150,7 @@ class Wechat extends BaseNotify implements Channel
                 ]
             ]
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -138,6 +165,7 @@ class Wechat extends BaseNotify implements Channel
             'msgtype' => 'template_card',
             'template_card' => $data
         ];
+        $this->addQueue();
         return $this;
     }
 
@@ -151,8 +179,11 @@ class Wechat extends BaseNotify implements Channel
      */
     protected function handleFile()
     {
-        $path = $this->file_queues['path'];
-        $filename = $this->file_queues['filename'];
+        if (isset($this->message['file_queue'])) {
+            $path = $this->message['file_queue']['path'];
+            $filename = $this->message['file_queue']['filename'];
+            unset($this->message['file_queue']);
+        }
 
         if (filter_var($path, FILTER_VALIDATE_URL)) {
             $path = $this->downloadFile($path);
@@ -204,10 +235,13 @@ class Wechat extends BaseNotify implements Channel
      */
     public function atUsers(array $userIds, bool $isAll = false)
     {
-        if ($this->message_type) {
-            $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], $userIds);
-            $this->atAll($isAll);
+        if (!isset($this->message_at['mentioned_list'])) {
+            $this->message_at['mentioned_list'] = [];
         }
+        $this->message_at['mentioned_list'] = array_merge((array)$this->message_at['mentioned_list'] ?? [], $userIds);
+        $this->atAll($isAll);
+        return $this;
+
     }
 
     /**
@@ -219,17 +253,23 @@ class Wechat extends BaseNotify implements Channel
      */
     public function atMobiles(array $phoneNums, bool $isAll = false)
     {
-        if ($this->message_type) {
-            $this->message[$this->message_type]['mentioned_mobile_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_mobile_list'] ?? [], $phoneNums);
-            $this->atAll($isAll);
+        if (!isset($this->message_at['mentioned_mobile_list'])) {
+            $this->message_at['mentioned_mobile_list'] = [];
         }
+        $this->message_at['mentioned_mobile_list'][] = array_merge((array)$this->message_at['mentioned_mobile_list'] ?? [], $phoneNums);;
+        $this->atAll($isAll);
+        return $this;
+
     }
 
     public function atAll(bool $isAll = true)
     {
-        if ($this->message_type) {
-            $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], ["@all"]);
+        if (!isset($this->message_at['mentioned_list'])) {
+            $this->message_at['mentioned_list'] = [];
         }
+        $this->message_at['mentioned_list'] = array_merge((array)$this->message_at['mentioned_list'] ?? [], ["@all"]);
+
+        return $this;
     }
 
 
