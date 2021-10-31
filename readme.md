@@ -1,4 +1,4 @@
-# 群组机器人
+# 群机器人
 
 [comment]: <> ([![Latest Version on Packagist][ico-version]][link-packagist])
 
@@ -8,13 +8,69 @@
 
 [comment]: <> ([![StyleCI][ico-styleci]][link-styleci])
 
-**目前支持的自定义群机器人和通用消息类型**
+## 通用消息类型支持情况
 
 | APP   | 名称 | 文本 | MD | 图片 | 文件 | 图文 | 卡片 |
 | ------ | ---- | ------ | ------ | ------ | ------ | ------ | ------ |
 | 企业微信 | wechat  | √ | √ | √ |√ |  √ | √ |
 | 钉钉 | dingtalk  | √ | √ | √ |√ |  √ | √ |
 | 飞书 | feishu  | √ | √ | × | √ | × | √ |
+
+Table of Contents
+=================
+
+* [群机器人](#群机器人)
+    * [通用消息类型支持情况](#通用消息类型支持情况)
+* [Table of Contents](#table-of-contents)
+* [安装](#安装)
+* [使用说明](#使用说明)
+    * [企业微信](#企业微信)
+        * [初始化](#初始化)
+        * [原生消息](#原生消息)
+        * [文本](#文本)
+        * [Markdown](#markdown)
+        * [网络图片](#网络图片)
+        * [本地图片](#本地图片)
+        * [网络文件](#网络文件)
+        * [本地文件](#本地文件)
+        * [图文](#图文)
+        * [通用卡片](#通用卡片)
+        * [模版卡片](#模版卡片)
+    * [钉钉](#钉钉)
+        * [初始化](#初始化-1)
+        * [设置密钥](#设置密钥)
+        * [原生消息](#原生消息-1)
+        * [文本](#文本-1)
+        * [Markdown](#markdown-1)
+        * [图片](#图片)
+        * [文件](#文件)
+        * [单条图文](#单条图文)
+        * [链接消息](#链接消息)
+        * [多条图文](#多条图文)
+        * [FeedCard](#feedcard)
+        * [通用卡片](#通用卡片-1)
+        * [actionCard](#actioncard)
+    * [飞书](#飞书)
+        * [初始化](#初始化-2)
+        * [设置密钥](#设置密钥-1)
+        * [原生消息](#原生消息-2)
+        * [文本](#文本-2)
+        * [Markdown](#markdown-2)
+        * [图片](#图片-1)
+        * [图文消息](#图文消息)
+        * [文件](#文件-1)
+        * [通用卡片](#通用卡片-2)
+        * [消息卡片](#消息卡片)
+        * [富文本](#富文本)
+    * [Laravel 支持](#laravel-支持)
+    * [进阶用法 - 自定义发送渠道](#进阶用法---自定义发送渠道)
+        * [定义渠道](#定义渠道)
+        * [发送消息](#发送消息)
+    * [Contributing](#contributing)
+    * [Security](#security)
+    * [License](#license)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 
 # 安装
@@ -35,7 +91,7 @@ $ composer require ymlluo/group-robot
 
 > [企业微信-群机器人配置说明](https://work.weixin.qq.com/api/doc/90000/90136/91770)
 
-**初始化**
+### 初始化
 
 ```php 
 //初始化直接指定webhook
@@ -45,8 +101,8 @@ $robot = new GroupRobot('wechat',$webhook);
 
 ```php 
 //初始化 并设置 webhook 发送地址
-$robot = new GroupRobot('wechat');
 $webhook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa';
+$robot = new GroupRobot('wechat');
 $robot->to($webhook);
 ```
 
