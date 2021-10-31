@@ -53,7 +53,7 @@ class Wechat extends BaseNotify implements Channel
      */
     public function file(string $path, string $filename = '')
     {
-        $this->filePending = ['path' => $path, 'filename' => $filename];
+        $this->file_queues = ['path' => $path, 'filename' => $filename];
         return $this;
     }
 
@@ -183,7 +183,7 @@ class Wechat extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atUsers(array $userIds, bool $isAll)
+    public function atUsers(array $userIds, bool $isAll=false)
     {
         if ($this->message_type) {
             $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], $userIds);
@@ -198,7 +198,7 @@ class Wechat extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atMobiles(array $phoneNums, bool $isAll)
+    public function atMobiles(array $phoneNums, bool $isAll=false)
     {
         if ($this->message_type) {
             $this->message[$this->message_type]['mentioned_mobile_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_mobile_list'] ?? [], $phoneNums);
@@ -206,7 +206,7 @@ class Wechat extends BaseNotify implements Channel
         }
     }
 
-    public function atAll(bool $isAll)
+    public function atAll(bool $isAll=true)
     {
         if ($this->message_type) {
             $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], ["@all"]);

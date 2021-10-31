@@ -10,11 +10,11 @@
 
 **目前支持的自定义群机器人和通用消息类型**
 
-| APP   | 名称 | 文本 | markdown | 图文 | 卡片 |
-| ------ | ---- | ------ | ------ | ------ | ------ |
-| 企业微信 | wechat  | √ | √ |√ |  √ |
-| 钉钉 | dingtalk  | √ | √ |√ |  √ |
-| 飞书 | feishu  | √ | √ |√ |  √ |
+| APP   | 名称 | 文本 | MD | 图片 | 文件 | 图文 | 卡片 |
+| ------ | ---- | ------ | ------ | ------ | ------ | ------ | ------ |
+| 企业微信 | wechat  | √ | √ | √ |√ |  √ | √ |
+| 钉钉 | dingtalk  | √ | √ | √ |√ |  √ | √ |
+| 飞书 | feishu  | √ | √ | × | √ | × | √ |
 
 
 ## Installation
@@ -27,57 +27,81 @@ $ composer require ymlluo/group-robot
 
 ## Usage
 
-----
+---
 
+## 企业微信
 
-
+> [企业微信-群机器人配置说明](https://work.weixin.qq.com/api/doc/90000/90136/91770)
 
 **初始化**
-```php
-$robot = new GroupRobot('wechat');
 
-//设置 webhook 发送地址
+```php 
+//初始化直接指定webhook
 $webhook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa';
-
-$robot->to($webhook);
-
-//或者初始化直接指定
 $robot = new GroupRobot('wechat',$webhook);
-
-//或者最后发送的时候设置
-$robot = $robot->text('hello')->send($webhook);
 ```
 
----
-### 企业微信
->[企业微信-群机器人配置说明](https://work.weixin.qq.com/api/doc/90000/90136/91770)
+```php 
+//初始化 并设置 webhook 发送地址
+$robot = new GroupRobot('wechat');
+$webhook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa';
+$robot->to($webhook);
+```
 
+### 原生消息
 
-**文本**
+```php 
+$robot->raw(['msgtype'='text','content'=>['text'=>'hello world!']])->send();
+```
+
+### 文本
+
 ``` php 
-$robot->text('hello world', ['mentioned_list' => ['@all'],'mentioned_mobile_list'=>['@all']])->send();
+$robot->text('hello world')->send();
 ```
-**Markdown**
-```php
-$robot->markdown("实时新增用户反馈<font color=\"warning\">132例</font>，请相关同事注意。")->send();
-```
-**图片**
-```php
-//网络图片
-$robot->image('http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png')->send();
 
-//发送本地图片
+```php 
+//@全部
+$robot->text('hello world')->atAll()->send();
+```
+
+```php 
+//@用户+全部
+$robot->text('hello world')->atUsers(["wangqing"],true)->send();
+```
+
+```php 
+//@手机号
+$robot->text('hello world')->atMobiles(["13800001111"],false)->send();
+```
+
+### Markdown
+
+```php
+ $robot->markdown("实时新增用户反馈<font color=\"warning\">132例</font>，请相关同事注意。")->send();
+```
+
+### 网络图片
+```php
+$robot->image('http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png')->send();
+```
+### 本地图片
+```php 
 $robot->image('/tmp/images/test_pic_msg1.png')->send();
 ```
-**文件**
-```php 
-//网络文件
-$robot->file('http://www.gov.cn/zhengce/pdfFile/2021_PDF.pdf','政府信息公开目录.pdf')->send();
 
-//本地文件
+### 网络文件
+
+```php 
+$robot->file('http://www.gov.cn/zhengce/pdfFile/2021_PDF.pdf','政府信息公开目录.pdf')->send();
+```
+### 本地文件
+```php 
 $robot->file('/tmp/pdfFile/2021_PDF.pdf','政府信息公开目录.pdf')->send();
 ```
-**图文**
+
+### 图文
+
 ```php 
 //单条图文
 $robot->news([
@@ -87,6 +111,9 @@ $robot->news([
   'picurl' => 'http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png'
   ])->send();
   
+```
+
+```php 
 //多条图文  
 $robot->news([
   [
@@ -103,7 +130,9 @@ $robot->news([
   ]
 ])->send();
 ```
-**模版卡片**
+
+### 模版卡片
+
 ```php 
 $robot->card([
             'card_type' => 'text_notice',
@@ -147,21 +176,349 @@ $robot->card([
             ],
         ])->send();
 ```
+
 ---
-### 钉钉
->[钉钉-自定义机器人接入](https://developers.dingtalk.com/document/robots/custom-robot-access)
-**文本**
-``` php 
-$robot->text('hello world', ['atMobiles' => ['180xxxxxx'],'atUserIds'=>['user123'],'isAtAll'=>false])->send();
-```
-**Markdown**
+
+## 钉钉
+
+> [钉钉-自定义机器人接入](https://developers.dingtalk.com/document/robots/custom-robot-access)
+
+### 初始化 
+
 ```php
-TODO 
+
+
+//初始化并设置webhook
+$webhook = 'https://oapi.dingtalk.com/robot/send?access_token=XXXXXX';
+$robot = new GroupRobot('dingtalk',$webhook);
+```
+
+```php
+$robot = new GroupRobot('dingtalk');
+//设置 webhook 发送地址
+$webhook = 'https://oapi.dingtalk.com/robot/send?access_token=XXXXXX';
+$robot->to($webhook);
+```
+### 设置密钥
+> 当选择安全设置为【加签】时必须设置
+```php 
+$robot->secret('xxxx');
+```
+
+### 原生消息
+```php 
+$robot->raw(['msgtype'='text','text'=>['content'=>'hello world!']])->send();
+```
+
+### 文本
+
+``` php 
+$robot->text('hello world')->send();
+```
+
+```php 
+//@全部
+$robot->text('hello world')->atAll()->send();
+```
+
+```php 
+//@用户 第二个参数为true @全部
+$robot->text('hello world')->atUsers(["user123"],true)->send();
+```
+
+```php 
+//@手机号,第二个参数为true @全部
+$robot->text('hello world')->atMobiles(["13800001111"],false)->send();
+```
+
+### Markdown
+* 目前只支持markdown语法的子集
+* 参考文档： [markdown语法](https://developers.dingtalk.com/document/robots/custom-robot-access/title-72m-8ag-pqw)
+```php
+$robot->markdown("#### 杭州天气 \n > 9度，西北风1级，空气良89，相对温度73%\n > ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png) \n", '杭州天气')->send();
+```
+
+### 图片
+* 基于 Markdown 构建
+* 仅支持网络图片，不支持本地文件
+``` php
+$robot->image("https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png")->send();
+
+```
+
+### 文件
+* 基于 Markdown 构建
+* 仅支持网络文件，不支持本地文件
+``` php
+$robot->file("http://h10032.www1.hp.com/ctg/Manual/c05440029.pdf", "HP 2600打印机说明书.pdf")->send();
+```
+
+### 单条图文
+* 基于链接消息 link 构建
+```php 
+//单条图文
+$robot->news([
+  'title' => '中秋节礼品领取',
+  'description' => '今年中秋节公司有豪礼相送',
+  'url' => 'https://developers.dingtalk.com/document/robots/robot-overview',
+  'picurl' => 'http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png'
+])->send();
+```
+
+### 链接消息
+
+```php 
+
+
+//等同于
+$robot->link([
+  'title' => '中秋节礼品领取',
+  'text' => '今年中秋节公司有豪礼相送',
+  'messageUrl' => 'https://developers.dingtalk.com/document/robots/robot-overview',
+  'picUrl' => 'http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png'
+])->send();
+```
+
+### 多条图文 
+* 基于 FeedCard 构建
+
+```php 
+$robot->news([
+  [
+  'title' => '中秋节礼品领取',
+  'url' => 'https://developers.dingtalk.com/document/robots/robot-overview',
+  'picurl' => 'http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png'
+  ],
+  [
+  'title' => '杭州天气',
+  'url' => 'https://developers.dingtalk.com/document/robots/robot-overview',
+  'picurl' => 'https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png'
+  ],
+])->send();
+```
+
+### FeedCard
+
+```php 
+$robot->feedCard([
+  [
+  'title' => '中秋节礼品领取',
+  'description' => '今年中秋节公司有豪礼相送',
+  'messageURL' => 'https://developers.dingtalk.com/document/robots/robot-overview',
+  'picURL' => 'http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png'
+  ],
+  [
+  'title' => '杭州天气',
+  'messageURL' => 'https://developers.dingtalk.com/document/robots/robot-overview',//注意是messageURL 不是messageUrl
+  'picURL' => 'https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png' //注意是picURL 不是picUrl
+  ],
+])->send();
+```
+
+### 通用卡片 
+* 基于 ActionCard 构建
+
+```php 
+//Card 单个按钮
+  $robot->card(
+   "乔布斯 20 年前想打造一间苹果咖啡厅，而它正是 Apple Store 的前身",
+   "### 乔布斯 20 年前想打造的苹果咖啡厅 \nApple Store 的设计正从原来满满的科技感走向生活化，而其生活化的走向其实可以追溯到 20 年前苹果一个建立咖啡馆的计划",
+   "https://gw.alicdn.com/tfs/TB1ut3xxbsrBKNjSZFpXXcXhFXa-846-786.png",
+   "https://www.dingtalk.com/",
+   ['title'=>'阅读全文','url'=>'https://www.dingtalk.com/']
+ )->send();
+```
+```php 
+//Card 多个按钮
+  $robot->card(
+    "乔布斯 20 年前想打造一间苹果咖啡厅，而它正是 Apple Store 的前身",//标题
+    "### 乔布斯 20 年前想打造的苹果咖啡厅",//描述
+    "https://gw.alicdn.com/tfs/TB1ut3xxbsrBKNjSZFpXXcXhFXa-846-786.png",//封面图
+    "https://www.dingtalk.com/",//专挑地址
+    [['title' => '内容不错', 'url' => 'https://www.dingtalk.com/'], ['title' => '不感兴趣', 'url' => 'https://www.dingtalk.com/']],//按钮
+    ['btnOrientation' => "1"] //非必填，按钮排列
+)->send();
+```
+
+###  actionCard 
+
+```php 
+//单个按钮
+  $robot->actionCard([
+   'title'=>'乔布斯 20 年前想打造一间苹果咖啡厅，而它正是 Apple Store 的前身',
+   'text'=>"![screenshot](https://gw.alicdn.com/tfs/TB1ut3xxbsrBKNjSZFpXXcXhFXa-846-786.png) \n### 乔布斯 20 年前想打造的苹果咖啡厅 \nApple Store 的设计正从原来满满的科技感走向生活化，而其生活化的走向其实可以追溯到 20 年前苹果一个建立咖啡馆的计划",
+   'btnOrientation'=>'0',
+   'singleTitle'=>'阅读全文',
+   'singleURL'=>'https://www.dingtalk.com/'
+ ])->send();
+```
+
+```php 
+//多个按钮
+  $robot->actionCard([
+    'title'=>'乔布斯 20 年前想打造一间苹果咖啡厅，而它正是 Apple Store 的前身',
+    'text'=>"![screenshot](https://gw.alicdn.com/tfs/TB1ut3xxbsrBKNjSZFpXXcXhFXa-846-786.png) \n### 乔布斯 20 年前想打造的苹果咖啡厅 \nApple Store 的设计正从原来满满的科技感走向生活化，而其生活化的走向其实可以追溯到 20 年前苹果一个建立咖啡馆的计划",
+     'btnOrientation'=>'0',
+     'btns'=>[
+       [
+         'title'=>'内容不错',
+         'actionURL'=>'https://www.dingtalk.com/'
+       ],
+       [
+         'title'=>'不感兴趣',
+         'actionURL'=>'https://www.dingtalk.com/'
+       ]
+     ]
+ ])->send();
+
 ```
 
 
+## 飞书
 
-## Change log
+> [飞书-自定义机器人指南](https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN)
+
+### 初始化 
+
+```php
+
+
+//初始化并设置webhook
+$webhook = 'https://open.feishu.cn/open-apis/bot/v2/hook/XXXXXX';
+$robot = new GroupRobot('feishu',$webhook);
+```
+
+```php
+$robot = new GroupRobot('feishu');
+//设置 webhook 发送地址
+$webhook = 'https://open.feishu.cn/open-apis/bot/v2/hook/XXXXXX';
+$robot->to($webhook);
+```
+### 设置密钥
+
+> 当选择安全设置为【加签】时必须设置
+
+```php 
+$robot->secret('xxxx');
+```
+
+### 原生消息 
+```php 
+$robot->raw(['msgtype'='text','content'=>['text'=>'hello world!']])->send();
+```
+
+### 文本
+
+``` php 
+$robot->text('hello world')->send();
+```
+
+### Markdown
+* 基于卡片消息构建
+* 无法使用与文本格式无关的markdown标签（比如图片、分割线）
+* 目前只支持 markdown 语法的子集，支持的有限元素。
+* 文档参考： [消息卡片构造卡片内容Markdown模块](https://open.feishu.cn/document/ukTMukTMukTM/uADOwUjLwgDM14CM4ATN)
+
+```php
+$robot->markdown("#### 杭州天气 \n > 9度，西北风1级，空气良89，相对温度73%\n > ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png) \n", '杭州天气')->send();
+```
+### 图片
+*不支持*
+
+### 图文消息
+*不支持*
+
+
+### 文件
+* 基于卡片消息 Markdown 构建
+* 仅支持网络文件，不支持本地文件
+``` php
+$robot->file("http://h10032.www1.hp.com/ctg/Manual/c05440029.pdf", "HP 2600打印机说明书.pdf")->send();
+```
+### 通用卡片
+
+* card 方法基于 interactive 构建
+* 不支持设置图片
+* 模板样式参考：[卡片支持的模板](https://open.feishu.cn/document/ukTMukTMukTM/ukTNwUjL5UDM14SO1ATN )
+
+```php 
+//Card 单个按钮
+  $robot->card(
+   "乔布斯 20 年前想打造一间苹果咖啡厅，而它正是 Apple Store 的前身",//title
+   "### 乔布斯 20 年前想打造的苹果咖啡厅",//描述
+   "",//封面图片，不支持
+   "https://www.dingtalk.com/",//跳转地址
+   ['title'=>'阅读全文','url'=>'https://www.dingtalk.com/'],//选填，按钮
+   ['template'=>'red'] //模板样式，
+ )->send();
+ ```
+### 消息卡片
+```php 
+$robot->interactive([
+            'header' => [
+                'title' => [
+                    'content' => '今日旅游推荐',
+                    'tag' => 'plain_text'
+                ]
+            ],
+            'elements' => [
+                [
+                    'tag' => 'div',
+                    'text' => [
+                        'content' => '**西湖**，位于浙江省杭州市西湖区龙井路1号',
+                        'tag' => 'lark_md'
+                    ]
+                ],
+                [
+                    'tag' => 'markdown',
+                    'content' => "*西湖美景二月天*"
+                ],
+                [
+                    'tag' => 'action',
+                    'actions' => [
+                        [
+                            'tag' => 'button',
+                            'text' => [
+                                'content' => '更多景点介绍 :玫瑰:',
+                                'tag' => 'lark_md'
+                            ],
+                            'url' => 'https://feishu.cn',
+                            'type' => 'default'
+                        ]
+                    ]
+                ]
+            ]
+        ])->send();
+
+```
+
+### 富文本
+```php 
+$robot->rich([
+  'title' => '项目更新',
+    'content' => [
+    [
+      [
+        'tag' => 'text',
+        'text' => '项目有更新:'
+      ], 
+      [
+        'tag' => 'a',
+        'text' => '请查看',
+        'href' => 'https://feishu.cn'
+      ],
+      [
+        'tag' => 'at',
+        'user_id' => 'all'
+      ]
+    ]
+  ]
+])->send();
+
+```
+
+
+[comment]: <> (## Change log)
 
 [comment]: <> (Please see the [changelog]&#40;changelog.md&#41; for more information on what has changed recently.)
 
@@ -172,10 +529,9 @@ TODO
 [comment]: <> ($ composer test)
 
 [comment]: <> (```)
+## Contributing
 
-[comment]: <> (## Contributing)
-
-[comment]: <> (Please see [contributing.md]&#40;contributing.md&#41; for details and a todolist.)
+Please see [contributing.md](contributing.md) for details and a todolist.
 
 ## Security
 
@@ -192,13 +548,21 @@ If you discover any security related issues, please email ymlluo@gmail.com inste
 MIT. Please see the [license file](license.md) for more information.
 
 [ico-version]: https://img.shields.io/packagist/v/ymlluo/grouprobot.svg?style=flat-square
+
 [ico-downloads]: https://img.shields.io/packagist/dt/ymlluo/grouprobot.svg?style=flat-square
+
 [ico-travis]: https://img.shields.io/travis/ymlluo/grouprobot/master.svg?style=flat-square
+
 [ico-styleci]: https://styleci.io/repos/12345678/shield
 
 [link-packagist]: https://packagist.org/packages/ymlluo/grouprobot
+
 [link-downloads]: https://packagist.org/packages/ymlluo/grouprobot
+
 [link-travis]: https://travis-ci.org/ymlluo/grouprobot
+
 [link-styleci]: https://styleci.io/repos/12345678
+
 [link-author]: https://github.com/ymlluo
+
 [link-contributors]: ../../contributors

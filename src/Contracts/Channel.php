@@ -87,7 +87,7 @@ interface Channel
      * @param bool $isAll
      * @return mixed
      */
-    public function atUsers(array $userIds, bool $isAll);
+    public function atUsers(array $userIds, bool $isAll=false);
 
     /**
      * @手机号
@@ -95,7 +95,7 @@ interface Channel
      * @param bool $isAll
      * @return mixed
      */
-    public function atMobiles(array $phoneNums, bool $isAll);
+    public function atMobiles(array $phoneNums, bool $isAll=false);
 
     /**
      * @全部用户
@@ -103,7 +103,7 @@ interface Channel
      * @param bool $isAll
      * @return mixed
      */
-    public function atAll(bool $isAll);
+    public function atAll(bool $isAll = true);
 
     /**
      * 设置秘钥

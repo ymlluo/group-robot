@@ -87,9 +87,6 @@ class BaseNotify
      */
     public function send()
     {
-        if (!isset($this->message)) {
-            throw new \Exception('message not set!');
-        }
 
         if (!$this->webhook) {
             throw new \Exception('webhook not set');
@@ -100,7 +97,9 @@ class BaseNotify
         if ($this->file_queues) {
             $this->handleFile();
         }
-//        dd($this->webhook);
+        if (!isset($this->message)) {
+            throw new \Exception('message not set!');
+        }
         $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false]);
         $result = json_decode((string)$response->getBody(), true);
         $this->result = $result;

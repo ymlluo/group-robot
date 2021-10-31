@@ -28,7 +28,7 @@ class Dingtalk extends BaseNotify implements Channel
         $this->message = [
             'msgtype' => 'markdown',
             'markdown' => [
-                'title' => $title,
+                'title' => $title ?? "图文消息",
                 'text' => $markdown
             ]
         ];
@@ -149,7 +149,7 @@ class Dingtalk extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atUsers(array $userIds, bool $isAll)
+    public function atUsers(array $userIds, bool $isAll=false)
     {
         if ($this->message_type) {
             $this->message['at']['atUserIds'] = array_merge((array)$this->message['at']['atUserIds'] ?? [], $userIds);
@@ -164,7 +164,7 @@ class Dingtalk extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atMobiles(array $phoneNums, bool $isAll)
+    public function atMobiles(array $phoneNums, bool $isAll=false)
     {
         if ($this->message_type) {
             $this->message['at']['atMobiles'] = array_merge((array)$this->message['at']['atMobiles'] ?? [], $phoneNums);
@@ -172,7 +172,7 @@ class Dingtalk extends BaseNotify implements Channel
         }
     }
 
-    public function atAll(bool $isAll)
+    public function atAll(bool $isAll=true)
     {
         if ($this->message_type) {
             $this->message['at']['isAtAll'] = $isAll;
