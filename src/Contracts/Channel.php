@@ -22,36 +22,26 @@ interface Channel
      * @param null $webhook
      * @return mixed
      */
-    public function send(string $webhook = '');
+    public function send();
 
 
     /**
      * 纯文本消息
      *
      * @param string $content
-     * @param array $at
      * @return mixed
      */
-    public function text(string $content, array $at = []);
+    public function text(string $content);
 
     /**
      * markdown 消息
      *
      * @param string $markdown
-     * @param array $at
+     * @param string $title
      * @return mixed
      */
-    public function markdown(string $markdown, array $at = []);
+    public function markdown(string $markdown, string $title = '');
 
-
-    /**
-     * 富文本消息
-     *
-     * @param array $content
-     * @param array $at
-     * @return mixed
-     */
-    public function rich(array $content, array $at = []);
 
     /**
      * 文件消息
@@ -80,10 +70,61 @@ interface Channel
 
     /**
      * 卡片消息
-     *
-     * @param array $card
+     * @param string $title
+     * @param string $description
+     * @param string $image
+     * @param string $url
+     * @param array $buttons ['title'=>'xxx','url'=>'https://xxx.com']
      * @return mixed
      */
-    public function card(array $card);
+    public function card(string $title,string $description,string $image,string $url,array $buttons=[],array $extra=[]);
+
+
+    /**
+     * @用户
+     *
+     * @param array $userIds
+     * @param bool $isAll
+     * @return mixed
+     */
+    public function atUsers(array $userIds, bool $isAll);
+
+    /**
+     * @手机号
+     * @param array $phoneNums
+     * @param bool $isAll
+     * @return mixed
+     */
+    public function atMobiles(array $phoneNums, bool $isAll);
+
+    /**
+     * @全部用户
+     *
+     * @param bool $isAll
+     * @return mixed
+     */
+    public function atAll(bool $isAll);
+
+    /**
+     * 设置秘钥
+     *
+     * @param string $secret
+     * @return mixed
+     */
+    public function secret(string $secret);
+
+    /**
+     * 秘钥签名
+     * @return mixed
+     */
+    public function makeSignature();
+
+    /**
+     * 发送结果
+     *
+     * @return mixed
+     */
+    public function result();
+
 
 }

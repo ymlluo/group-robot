@@ -6,6 +6,7 @@ namespace Ymlluo\GroupRobot\Notify;
 
 use GuzzleHttp\Client;
 use Psr\Http\Client\ClientInterface;
+use Ymlluo\GroupRobot\Contracts\Channel;
 use Ymlluo\GroupRobot\GroupRobot;
 
 class BaseNotify
@@ -14,10 +15,25 @@ class BaseNotify
 
     public $message;
 
+    public $file_queues = null;
+
+    public $message_type;
+
+    protected $secret;
+
+    public $result;
+
 
     public function __construct()
     {
+
     }
+
+    public function secret(string $secret)
+    {
+        $this->secret = $secret;
+    }
+    
 
     /**
      * set webhook url
@@ -41,6 +57,27 @@ class BaseNotify
         $this->message = $data;
     }
 
+    protected function handleFile()
+    {
+        throw new \Exception("channel handleFile function not set");
+    }
+
+
+    /**
+     * download file to local
+     *
+     * @param $url
+     * @return string
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    protected function downloadFile($url)
+    {
+        $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+        $path = tempnam(sys_get_temp_dir(), '') . '.' . $extension;
+        $this->getClient()->request('GET', $url, ['sink' => $path, 'verify' => false]);
+        return $path;
+    }
+
     /**
      * 发送消息
      *
@@ -48,21 +85,36 @@ class BaseNotify
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function send(string $webhook = '')
+    public function send()
     {
         if (!isset($this->message)) {
             throw new \Exception('message not set!');
         }
-        if ($webhook) {
-            $this->webhook = $webhook;
-        }
+
         if (!$this->webhook) {
             throw new \Exception('webhook not set');
         }
-
-        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false,'verify'=>false]);
+        if ($this->secret) {
+            $this->makeSignature();
+        }
+        if ($this->file_queues) {
+            $this->handleFile();
+        }
+//        dd($this->webhook);
+        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false]);
         $result = json_decode((string)$response->getBody(), true);
-        return ['params' => $this->message, 'result' => $result];
+        $this->result = $result;
+        return $result;
+    }
+
+    /**
+     * 发送结果
+     *
+     * @return mixed
+     */
+    public function result()
+    {
+        return $this->result;
     }
 
     /**
@@ -73,4 +125,5 @@ class BaseNotify
     {
         return new Client($config);
     }
+
 }

@@ -7,8 +7,6 @@ use Ymlluo\GroupRobot\Contracts\Channel;
 
 class Wechat extends BaseNotify implements Channel
 {
-    public $filePending = null;
-
     /**
      * 文本消息
      *
@@ -16,17 +14,15 @@ class Wechat extends BaseNotify implements Channel
      * @param array $at
      * @return $this|mixed
      */
-    public function text(string $content, array $at = [])
+    public function text(string $content)
     {
+        $this->message_type = 'text';
         $this->message = [
             'msgtype' => 'text',
             'text' => [
                 'content' => $content
             ]
         ];
-        if ($at) {
-            $this->message['text'] = array_merge($this->message['text'], $at);
-        }
         return $this;
     }
 
@@ -34,10 +30,10 @@ class Wechat extends BaseNotify implements Channel
      *  markdown 消息
      *
      * @param string $markdown
-     * @param array $at
+     * @param string $title
      * @return $this|mixed
      */
-    public function markdown(string $markdown, array $at = [])
+    public function markdown(string $markdown, string $title = '')
     {
         $this->message = [
             'msgtype' => 'markdown',
@@ -45,23 +41,7 @@ class Wechat extends BaseNotify implements Channel
                 'content' => $markdown
             ]
         ];
-        if ($at) {
-            $this->message['markdown'] = array_merge($this->message['markdown'], $at);
-        }
         return $this;
-    }
-
-    /**
-     * 富文本消息
-     *
-     * @param array $content
-     * @param array $at
-     * @return mixed|void
-     * @throws \Exception
-     */
-    public function rich(array $content, array $at = [])
-    {
-        throw new \Exception("channel don't support rice message");
     }
 
     /**
@@ -116,17 +96,27 @@ class Wechat extends BaseNotify implements Channel
         return $this;
     }
 
-    /**
-     * 卡片消息
-     *
-     * @param array $card
-     * @return $this|mixed
-     */
-    public function card(array $card)
+    public function card(string $title, string $description, string $image,string $url,array $buttons=[],array $extra=[])
     {
-        $this->message = [
-            'msgtype' => 'template_card',
-            'template_card' => $card
+        $this->message =[
+          'msgtype'=>'template_card',
+            'template_card'=>[
+                'card_type'=>'news_notice',
+                'main_title'=>[
+                    'title'=>$title,
+                    'desc'=>$description
+                ],
+                'card_image'=>[
+                    'url'=>$image,
+                ],
+                'vertical_content_list'=>[],
+                'jump_list'=>$buttons,
+                'card_action'=>[
+                    'type'=>1,
+                    'url'=>$url,
+
+                ]
+            ]
         ];
         return $this;
     }
@@ -139,10 +129,10 @@ class Wechat extends BaseNotify implements Channel
      * @return $this
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    protected function handleFile($webhook)
+    protected function handleFile()
     {
-        $path = $this->filePending['path'];
-        $filename = $this->filePending['filename'];
+        $path = $this->file_queues['path'];
+        $filename = $this->file_queues['filename'];
 
         if (filter_var($path, FILTER_VALIDATE_URL)) {
             $path = $this->downloadFile($path);
@@ -150,7 +140,7 @@ class Wechat extends BaseNotify implements Channel
         if (!file_exists($path)) {
             throw new \Exception("file not exists");
         }
-        parse_str(data_get(parse_url($webhook), 'query', ''), $q);
+        parse_str(data_get(parse_url($this->webhook), 'query', ''), $q);
         if (!$key = data_get($q, 'key')) {
             throw new \Exception("get key from url error");
         }
@@ -180,42 +170,52 @@ class Wechat extends BaseNotify implements Channel
             } else {
                 throw new \Exception('get media id error');
             }
-
-
         }
         throw new \Exception('upload file to wechat server error', 10012);
     }
 
+
+
     /**
-     * 从 url 下载文件到本地
+     * at users
      *
-     * @param $url
-     * @return false|string
+     * @param array $userIds
+     * @param bool $isAll
+     * @return mixed|void
      */
-    protected function downloadFile($url)
+    public function atUsers(array $userIds, bool $isAll)
     {
-        $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-        $path = tempnam(sys_get_temp_dir(),'') . '.' . $extension;
-        $this->getClient()->request('GET',$url,['sink'=>$path,'verify'=>false]);
-        return $path;
+        if ($this->message_type) {
+            $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], $userIds);
+            $this->atAll($isAll);
+        }
     }
 
     /**
-     * 发送消息
+     * at mobiles
      *
-     * @param string|null $webhook
-     * @return array|mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param array $phoneNums
+     * @param bool $isAll
+     * @return mixed|void
      */
-    public function send(string $webhook = '')
+    public function atMobiles(array $phoneNums, bool $isAll)
     {
-        if ($webhook){
-            $this->webhook = $webhook;
+        if ($this->message_type) {
+            $this->message[$this->message_type]['mentioned_mobile_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_mobile_list'] ?? [], $phoneNums);
+            $this->atAll($isAll);
         }
-        if ($this->filePending) {
-            $this->handleFile($this->webhook);
-        }
-        return parent::send($this->webhook);
     }
 
+    public function atAll(bool $isAll)
+    {
+        if ($this->message_type) {
+            $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], ["@all"]);
+        }
+    }
+
+
+    public function makeSignature()
+    {
+        // TODO: Implement makeSignature() method.
+    }
 }
