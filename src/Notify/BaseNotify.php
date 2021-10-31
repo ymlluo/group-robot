@@ -32,8 +32,9 @@ class BaseNotify
     public function secret(string $secret)
     {
         $this->secret = $secret;
+        return $this;
     }
-    
+
 
     /**
      * set webhook url

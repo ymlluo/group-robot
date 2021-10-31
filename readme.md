@@ -17,7 +17,7 @@
 | 飞书 | feishu  | √ | √ | × | √ | × | √ |
 
 
-## Installation
+# 安装
 
 Via Composer
 
@@ -25,7 +25,9 @@ Via Composer
 $ composer require ymlluo/group-robot
 ```
 
-## Usage
+# 使用说明
+
+** <font color='red'>特别特别要注意：一定要保护好机器人的webhook地址，避免泄漏！</font>**
 
 ---
 
@@ -131,10 +133,24 @@ $robot->news([
 ])->send();
 ```
 
+### 通用卡片
+* 基于模板卡片 - news_notice 构建
+
+```php
+$robot->card(
+  "Apple Store 的前身",//一级标题，建议不超过26个字
+  "乔布斯 20 年前想打造的苹果咖啡厅 \nApple Store 的设计正从原来满满的科技感走向生活化，而其生活化的走向其实可以追溯到 20 年前苹果一个建立咖啡馆的计划",//标题辅助信息，建议不超过30个字
+  "https://gw.alicdn.com/tfs/TB1ut3xxbsrBKNjSZFpXXcXhFXa-846-786.png",//封面图片
+  "https://www.qq.com/",//链接跳转的url
+  [['title' => '钉钉', 'url' => 'https://www.dingtalk.com/'], ['title' => '百度', 'url' => 'https://www.baidu.com/']]
+)->send();
+```
+
 ### 模版卡片
 
 ```php 
-$robot->card([
+//文本通知模版卡片
+$robot->template_card([
             'card_type' => 'text_notice',
             'source' => [
                 'icon_url' => 'https://wework.qpic.cn/wwpic/252813_jOfDHtcISzuodLa_1629280209/0',
@@ -149,6 +165,54 @@ $robot->card([
                 'desc' => '数据含义',
             ],
             'sub_title_text' => '下载企业微信还能抢红包！',
+            'horizontal_content_list' => [
+                0 => [
+                    'keyname' => '邀请人',
+                    'value' => '张三',
+                ],
+                1 => [
+                    'keyname' => '企微官网',
+                    'value' => '点击访问',
+                    'type' => 1,
+                    'url' => 'https://work.weixin.qq.com/?from=openApi',
+                ]
+            ],
+            'jump_list' => [
+                0 => [
+                    'type' => 1,
+                    'url' => 'https://work.weixin.qq.com/?from=openApi',
+                    'title' => '企业微信官网',
+                ]
+            ],
+            'card_action' => [
+                'type' => 1,
+                'url' => 'https://work.weixin.qq.com/?from=openApi',
+                'appid' => 'APPID',
+                'pagepath' => 'PAGEPATH',
+            ],
+        ])->send();
+```
+
+```php 
+//图文展示模版卡片
+$robot->template_card([
+            'card_type' => 'news_notice',
+            'source' => [
+                'icon_url' => 'https://wework.qpic.cn/wwpic/252813_jOfDHtcISzuodLa_1629280209/0',
+                'desc' => '企业微信',
+            ],
+            'main_title' => [
+                'title' => '欢迎使用企业微信',
+                'desc' => '您的好友正在邀请您加入企业微信',
+            ],
+            'card_image' => [
+                'url' => 'https://wework.qpic.cn/wwpic/354393_4zpkKXd7SrGMvfg_1629280616/0',
+                'aspect_ratio' => 2.25,
+            ],
+            'vertical_content_list' =>[
+              'title'=>'惊喜红包等你来拿',
+              'desc'=>'下载企业微信还能抢红包！'
+            ],
             'horizontal_content_list' => [
                 0 => [
                     'keyname' => '邀请人',
@@ -334,7 +398,7 @@ $robot->feedCard([
     "乔布斯 20 年前想打造一间苹果咖啡厅，而它正是 Apple Store 的前身",//标题
     "### 乔布斯 20 年前想打造的苹果咖啡厅",//描述
     "https://gw.alicdn.com/tfs/TB1ut3xxbsrBKNjSZFpXXcXhFXa-846-786.png",//封面图
-    "https://www.dingtalk.com/",//专挑地址
+    "https://www.dingtalk.com/",//跳转地址
     [['title' => '内容不错', 'url' => 'https://www.dingtalk.com/'], ['title' => '不感兴趣', 'url' => 'https://www.dingtalk.com/']],//按钮
     ['btnOrientation' => "1"] //非必填，按钮排列
 )->send();
@@ -516,7 +580,50 @@ $robot->rich([
 ])->send();
 
 ```
+----
 
+##  Laravel 支持
+
+如果在Laravel 中使用，添加下面一行到 config/app.php 中 providers 部分：
+> Laravel > 5.5 支持 Package Auto-Discovery 无需手动添加配置
+```php 
+  Ymlluo\\GroupRobot\\GroupRobotServiceProvider::class
+```
+**使用**
+```php 
+$webhook = 'https://oapi.dingtalk.com/robot/send?access_token=xxxx';
+$secret = 'xxx';
+$result =app('grouprobot')->channel('dingtalk')->to($webhook)->secret($secret)->text('hello world')->send();
+dd($result);
+```
+
+------
+## 进阶用法 - 自定义发送渠道
+> 可以实现 src/Contracts/Channel.php 接口，通过自定义渠道发送消息
+
+### 定义渠道
+```php 
+<?php
+
+namespace App;
+
+use Ymlluo\GroupRobot\Contracts\Channel;
+use Ymlluo\GroupRobot\Notify\BaseNotify;
+
+class CustomerChannel extends BaseNotify implements Channel
+{
+    // todo
+}
+
+```
+### 发送消息
+
+```php 
+$webhook = 'https://xxx.com/webhook/xxx';
+$robot = new GroupRobot();
+$robot->extendChannel(new CustomerChannel::class)->to($webhook)->text("hello !")->send();
+```
+------
 
 [comment]: <> (## Change log)
 

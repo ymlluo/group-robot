@@ -1,6 +1,6 @@
 {
     "name": "ymlluo/group-robot",
-    "description": ":package_description",
+    "description": "钉钉、企业微信、飞书 自定义群组机器人。支持链式语法创建发送消息。支持文本、Markdown、图片、文件、图文、卡片等消息。",
     "license": "MIT",
     "authors": [
         {
@@ -10,13 +10,13 @@
         }
     ],
     "homepage": "https://github.com/ymlluo/group-robot",
-    "keywords": ["Laravel", "GroupRobot"],
+    "keywords": ["Laravel", "GroupRobot","robot","dingtalk","wechat","feishu"],
     "require": {
         "php": "^7.1",
         "ext-zip": "*",
         "ext-curl": "*",
         "ext-json": "*",
-        "guzzlehttp/guzzle": "^7.0"
+        "guzzlehttp/guzzle": ">=6.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~9.0",

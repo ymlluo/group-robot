@@ -96,27 +96,47 @@ class Wechat extends BaseNotify implements Channel
         return $this;
     }
 
-    public function card(string $title, string $description, string $image,string $url,array $buttons=[],array $extra=[])
+    public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = [])
     {
-        $this->message =[
-          'msgtype'=>'template_card',
-            'template_card'=>[
-                'card_type'=>'news_notice',
-                'main_title'=>[
-                    'title'=>$title,
-                    'desc'=>$description
+        $this->message = [
+            'msgtype' => 'template_card',
+            'template_card' => [
+                'card_type' => 'news_notice',
+                'main_title' => [
+                    'title' => $title,
+                    'desc' => $description
                 ],
-                'card_image'=>[
-                    'url'=>$image,
+                'card_image' => [
+                    'url' => $image,
                 ],
-                'vertical_content_list'=>[],
-                'jump_list'=>$buttons,
-                'card_action'=>[
-                    'type'=>1,
-                    'url'=>$url,
+                'vertical_content_list' => [],
+                'jump_list' => array_map(function ($btn) {
+                    return [
+                        'type' => $btn['type'] ?? 1,
+                        'title' => $btn['title'] ?? '',
+                        'url' => $btn['url'] ?? '',
+                    ];
+                }, array_slice($buttons,0,3)),
+                'card_action' => [
+                    'type' => 1,
+                    'url' => $url,
 
                 ]
             ]
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param array $data
+     * @return $this
+     */
+    public function template_card(array $data)
+    {
+        $this->message = [
+            'msgtype' => 'template_card',
+            'template_card' => $data
         ];
         return $this;
     }
@@ -175,7 +195,6 @@ class Wechat extends BaseNotify implements Channel
     }
 
 
-
     /**
      * at users
      *
@@ -183,7 +202,7 @@ class Wechat extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atUsers(array $userIds, bool $isAll=false)
+    public function atUsers(array $userIds, bool $isAll = false)
     {
         if ($this->message_type) {
             $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], $userIds);
@@ -198,7 +217,7 @@ class Wechat extends BaseNotify implements Channel
      * @param bool $isAll
      * @return mixed|void
      */
-    public function atMobiles(array $phoneNums, bool $isAll=false)
+    public function atMobiles(array $phoneNums, bool $isAll = false)
     {
         if ($this->message_type) {
             $this->message[$this->message_type]['mentioned_mobile_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_mobile_list'] ?? [], $phoneNums);
@@ -206,7 +225,7 @@ class Wechat extends BaseNotify implements Channel
         }
     }
 
-    public function atAll(bool $isAll=true)
+    public function atAll(bool $isAll = true)
     {
         if ($this->message_type) {
             $this->message[$this->message_type]['mentioned_list'] = array_merge((array)$this->message[$this->message_type]['mentioned_list'] ?? [], ["@all"]);

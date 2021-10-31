@@ -25,12 +25,26 @@ class GroupRobot
      * 自定义 channel
      * @param Channel $channel
      */
-    public function channel(Channel $channel)
+    public function channel(string $channel)
     {
-        $this->channel = $channel;
+        $this->channel = $this->resolve($channel);
+        return $this;
     }
 
-    protected function resolve($name)
+    /**
+     * 自定义扩展
+     *
+     * @param Channel $channel
+     * @return $this
+     */
+    public function extendChannel(Channel $channel)
+    {
+        $this->channel = $channel;
+        return $this;
+    }
+
+
+    public function resolve($name)
     {
         if (!$name) {
             return null;
