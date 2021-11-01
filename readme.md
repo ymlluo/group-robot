@@ -109,7 +109,7 @@ $robot->to($webhook);
 ### 原生消息
 
 ```php 
-$robot->raw(['msgtype'='text','content'=>['text'=>'hello world!']])->send();
+$robot->raw(['msgtype'=>'text','text'=>['content'=>'hello world!']])->send();
 ```
 
 ### 文本
@@ -218,8 +218,10 @@ $robot->template_card([
                 'desc' => '企业微信',
             ],
             'main_title' => [
+              [
                 'title' => '欢迎使用企业微信',
                 'desc' => '您的好友正在邀请您加入企业微信',
+              ]
             ],
             'emphasis_content' => [
                 'title' => '100',
@@ -332,7 +334,7 @@ $robot->secret('xxxx');
 
 ### 原生消息
 ```php 
-$robot->raw(['msgtype'='text','text'=>['content'=>'hello world!']])->send();
+$robot->raw(['msgtype'=>'text','text'=>['content'=>'hello world!']])->send();
 ```
 
 ### 文本
@@ -530,13 +532,13 @@ $robot->secret('xxxx');
 
 ### 原生消息 
 ```php 
-$robot->raw(['msgtype'='text','content'=>['text'=>'hello world!']])->send();
+$robot->raw(['msg_type'=>'text','content'=>['text'=>'hello world!']])->send();
 ```
 
 ### 文本
 * 仅支持 @全部
 ``` php 
-$robot->text('hello world')->send();
+$robot->text('hello world')->atAll()->send();
 ```
 
 ### Markdown
@@ -547,7 +549,8 @@ $robot->text('hello world')->send();
 * 仅支持 @全部
 
 ```php
-$robot->markdown("#### 杭州天气 \n > 9度，西北风1级，空气良89，相对温度73%\n > ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png) \n", '杭州天气')->send();
+$robot->markdown("#### 杭州天气 \n > 9度，西北风1级，空气良89，相对温度73%\n", '杭州天气')->atAll()->send();
+
 ```
 ### 图片
 *不支持*

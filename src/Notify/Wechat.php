@@ -115,7 +115,7 @@ class Wechat extends BaseNotify implements Channel
         $this->message = [
             'msgtype' => 'news',
             'news' => [
-                'articles' => isset($news['title']) ? [$news] : $news
+                'articles' => !is_array(current($news)) ? [$news] : $news
             ]
         ];
         $this->addQueue();
@@ -256,7 +256,7 @@ class Wechat extends BaseNotify implements Channel
         if (!isset($this->message_at['mentioned_mobile_list'])) {
             $this->message_at['mentioned_mobile_list'] = [];
         }
-        $this->message_at['mentioned_mobile_list'][] = array_merge((array)$this->message_at['mentioned_mobile_list'] ?? [], $phoneNums);;
+        $this->message_at['mentioned_mobile_list'] = array_merge((array)$this->message_at['mentioned_mobile_list'] ?? [], $phoneNums);;
         $this->atAll($isAll);
         return $this;
 

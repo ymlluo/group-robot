@@ -52,7 +52,7 @@ class Dingtalk extends BaseNotify implements Channel
 
     public function news(array $news)
     {
-        if (isset($news['title'])) {
+        if (!is_array(current($news))) {
             return $this->link($news);
         } else {
             return $this->feedCard($news);
@@ -160,7 +160,10 @@ class Dingtalk extends BaseNotify implements Channel
      */
     public function atUsers(array $userIds, bool $isAll = false)
     {
-        $this->message_at['at']['atUserIds'] = $userIds;
+        if (!isset($this->message_at['at']['atUserIds'])){
+            $this->message_at['at']['atUserIds'] = [];
+        }
+        $this->message_at['at']['atUserIds'] = array_merge((array)$this->message_at['at']['atUserIds']??[],$userIds);
         $this->atAll($isAll);
         return $this;
     }
@@ -174,6 +177,9 @@ class Dingtalk extends BaseNotify implements Channel
      */
     public function atMobiles(array $phoneNums, bool $isAll = false)
     {
+        if (!isset($this->message_at['at']['atMobiles'])){
+            $this->message_at['at']['atMobiles'] = [];
+        }
         $this->message_at['at']['atMobiles'] = array_merge((array)$this->message_at['at']['atMobiles']??[],$phoneNums);
         $this->atAll($isAll);
         return $this;

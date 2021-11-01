@@ -58,6 +58,7 @@ class BaseNotify
     {
         $this->message = $data;
         $this->addQueue();
+        return $this;
     }
 
     protected function handleFile()
@@ -181,7 +182,11 @@ class BaseNotify
                         }
                     }
                 } else {
-                    $array[$k] = $value;
+                    if ($k === 0){
+                        $array[] = $value;
+                    }else{
+                        $array[$k] = $value;
+                    }
                 }
             }
         }

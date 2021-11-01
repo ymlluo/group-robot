@@ -105,6 +105,9 @@ class Feishu extends BaseNotify implements Channel
 
     public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = [])
     {
+        if ($buttons && !is_array(current($buttons))){
+            $buttons = [$buttons];
+        }
         $this->message = [
             'msg_type' => 'interactive',
             'card' => [
@@ -193,7 +196,7 @@ class Feishu extends BaseNotify implements Channel
                 }
                 break;
             case 'rich':
-                $this->message_at['content']['post']['zh_cn'][] = ['tag' => 'at', 'user_id' => 'all', 'user_name' => '所有人'];
+                $this->message_at['content']['post']['zh_cn']['content'][0][2] = ['tag' => 'at', 'user_id' => 'all', 'user_name' => '所有人'];
                 break;
         }
         return $this;
