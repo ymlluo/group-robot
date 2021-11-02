@@ -7,6 +7,31 @@ use Ymlluo\GroupRobot\Notify\Dingtalk;
 use Ymlluo\GroupRobot\Notify\Feishu;
 use Ymlluo\GroupRobot\Notify\Wechat;
 
+/**
+ * Class GroupRobot
+ * @package Ymlluo\GroupRobot
+ *
+ * @method  \Ymlluo\GroupRobot\GroupRobot secret(string $secret)
+ * @method \Ymlluo\GroupRobot\GroupRobot to(string $webhook)
+ * @method \Ymlluo\GroupRobot\GroupRobot raw(array $data)
+ * @method \Ymlluo\GroupRobot\GroupRobot text(string $content)
+ * @method \Ymlluo\GroupRobot\GroupRobot markdown(string $markdown, string $title = '')
+ * @method \Ymlluo\GroupRobot\GroupRobot file(string $path, string $filename = '')
+ * @method \Ymlluo\GroupRobot\GroupRobot image(string $path)
+ * @method \Ymlluo\GroupRobot\GroupRobot news(array $news)
+ * @method \Ymlluo\GroupRobot\GroupRobot card(string $title,string $description,string $image,string $url,array $buttons=[],array $extra=[])
+ * @method \Ymlluo\GroupRobot\GroupRobot atUsers(array $userIds, bool $isAll=false)
+ * @method \Ymlluo\GroupRobot\GroupRobot atMobiles(array $phoneNums, bool $isAll=false)
+ * @method \Ymlluo\GroupRobot\GroupRobot atAll(bool $isAll = true);
+ * @method \Ymlluo\GroupRobot\GroupRobot makeSignature();
+ * @method \Ymlluo\GroupRobot\GroupRobot queue()
+ * @method array|string send()
+ * @method array result()
+ * @method \Ymlluo\GroupRobot\GroupRobot getClient($config = [])
+ *
+ *
+ *
+ */
 class GroupRobot
 {
     public $channel;

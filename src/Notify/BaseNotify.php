@@ -72,7 +72,7 @@ class BaseNotify
         return $this;
     }
 
-    public function addQueue()
+    protected function addQueue()
     {
         if ($this->use_queue) {
             $this->message_queues[] = $this->message;
