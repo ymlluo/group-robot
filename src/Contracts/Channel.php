@@ -77,7 +77,7 @@ interface Channel
      * @param array $buttons ['title'=>'xxx','url'=>'https://xxx.com']
      * @return mixed
      */
-    public function card(string $title,string $description,string $image,string $url,array $buttons=[],array $extra=[]);
+    public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = []);
 
 
     /**
@@ -87,7 +87,7 @@ interface Channel
      * @param bool $isAll
      * @return mixed
      */
-    public function atUsers(array $userIds, bool $isAll=false);
+    public function atUsers(array $userIds, bool $isAll = false);
 
     /**
      * @手机号
@@ -95,7 +95,7 @@ interface Channel
      * @param bool $isAll
      * @return mixed
      */
-    public function atMobiles(array $phoneNums, bool $isAll=false);
+    public function atMobiles(array $phoneNums, bool $isAll = false);
 
     /**
      * @全部用户
@@ -125,6 +125,21 @@ interface Channel
      * @return mixed
      */
     public function result();
+
+    /**
+     * 发送渠道名称
+     * @param string $channelName
+     * @return mixed
+     */
+    public function name(string $channelName);
+
+    /**
+     * 发送渠道别名
+     *
+     * @param string $alias
+     * @return mixed
+     */
+    public function alias(string $alias);
 
 
 }

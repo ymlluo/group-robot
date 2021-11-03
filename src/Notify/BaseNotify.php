@@ -24,11 +24,35 @@ class BaseNotify
 
     public $result;
 
+    public $alias = '';
 
-    public function __construct()
+    public $name = '';
+
+
+
+    public function alias(string $name)
+    {
+        $this->alias = $name;
+        return $this;
+    }
+
+    public function name(string $name)
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    public function getAlias(): string
+    {
+        return $this->alias;
+    }
+
+    public function getName(): string
     {
 
+        return $this->name;
     }
+
 
     public function secret(string $secret)
     {
@@ -74,9 +98,7 @@ class BaseNotify
 
     protected function addQueue()
     {
-        if ($this->use_queue) {
-            $this->message_queues[] = $this->message;
-        }
+        $this->message_queues[] = $this->message;
     }
 
 
@@ -111,7 +133,7 @@ class BaseNotify
         if ($this->secret) {
             $this->makeSignature();
         }
-        if ($this->message_queues) {
+        if ($this->use_queue && $this->message_queues) {
             $this->message = array_shift($this->message_queues);
         }
         if (isset($this->message['file_queue'])) {
@@ -125,10 +147,10 @@ class BaseNotify
             if ($this->message_at) {
                 if (isset($this->message['at_append'])) {
                     $concat = $this->message['at_append'] === 'concat';
-                    $this->array_append($this->message, $this->message_at, $concat);
+                    $this->arrayAppend($this->message, $this->message_at, $concat);
                 }
                 if (isset($this->message['at_key'])) {
-                    $this->array_append($this->message, [$this->message['at_key'] => $this->message_at]);
+                    $this->arrayAppend($this->message, [$this->message['at_key'] => $this->message_at]);
                 }
             }
             unset($this->message['at_allow'], $this->message['at_key'], $this->message['at_concat'], $this->message['at_append']);
@@ -169,22 +191,22 @@ class BaseNotify
      * @param $append
      * @param false $concat
      */
-    protected function array_append(&$array, $append, $concat = false)
+    protected function arrayAppend(&$array, $append, $concat = false)
     {
         if (is_array($append)) {
             foreach ($append as $k => $value) {
                 if (isset($array[$k])) {
                     if (is_array($array[$k])) {
-                        $this->array_append($array[$k], $value, $concat);
+                        $this->arrayAppend($array[$k], $value, $concat);
                     } else {
                         if ($concat) {
                             $array[$k] .= $value;
                         }
                     }
                 } else {
-                    if ($k === 0){
+                    if ($k === 0) {
                         $array[] = $value;
-                    }else{
+                    } else {
                         $array[$k] = $value;
                     }
                 }
@@ -201,7 +223,7 @@ class BaseNotify
      * @param string $separator
      * @return array
      */
-    protected function chunk_strings(string $string, int $maxLength, string $separator = "\n")
+    protected function chunkStrings(string $string, int $maxLength, string $separator = "\n"): array
     {
         do {
             $msg = substr($string, 0, $maxLength);

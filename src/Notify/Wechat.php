@@ -21,7 +21,7 @@ class Wechat extends BaseNotify implements Channel
     {
         if (strlen($content) > $this->max_text_length) {
             $this->queue();
-            $lists = $this->chunk_strings($content, $this->max_text_length);
+            $lists = $this->chunkStrings($content, $this->max_text_length);
             foreach ($lists as $text) {
                 $this->text($text);
             }
@@ -50,7 +50,7 @@ class Wechat extends BaseNotify implements Channel
     {
         if (strlen($markdown) > $this->max_md_length) {
             $this->queue();
-            $lists = $this->chunk_strings($markdown, $this->max_md_length);
+            $lists = $this->chunkStrings($markdown, $this->max_md_length);
             foreach ($lists as $text) {
                 $this->markdown($text, $title);
             }
