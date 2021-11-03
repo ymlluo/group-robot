@@ -31,7 +31,7 @@ class GroupRobotServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/grouprobot.php', 'grouprobot');
+        $this->mergeConfigFrom(__DIR__ . '/../config/grouprobot.php', 'grouprobot');
 
         // Register the service the package provides.
         $this->app->singleton('grouprobot', function ($app) {
@@ -58,7 +58,7 @@ class GroupRobotServiceProvider extends ServiceProvider
     {
         // Publishing the configuration file.
         $this->publishes([
-            __DIR__.'/../config/grouprobot.php' => config_path('grouprobot.php'),
+            __DIR__ . '/../config/grouprobot.php' => config_path('grouprobot.php'),
         ], 'grouprobot.config');
 
         // Publishing the views.

@@ -3,10 +3,12 @@
 
 namespace Ymlluo\GroupRobot\Notify;
 
-use Ymlluo\GroupRobot\Contracts\Channel;
+use Ymlluo\GroupRobot\Contracts\Platform;
 
-class Wechat extends BaseNotify implements Channel
+class Wechat extends BaseNotify implements Platform
 {
+    protected $platform = 'wechat';
+
     public $max_text_length = 2048;
     public $max_md_length = 4096;
 
@@ -32,8 +34,6 @@ class Wechat extends BaseNotify implements Channel
             'text' => [
                 'content' => $content
             ],
-            'at_allow' => true,
-            'at_key' => 'text'
         ];
         $this->addQueue();
         return $this;
@@ -122,6 +122,17 @@ class Wechat extends BaseNotify implements Channel
         return $this;
     }
 
+    /**
+     * 卡片消息
+     *
+     * @param string $title
+     * @param string $description
+     * @param string $image
+     * @param string $url
+     * @param array $buttons
+     * @param array $extra
+     * @return $this|mixed
+     */
     public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = [])
     {
         $this->message = [
@@ -142,7 +153,7 @@ class Wechat extends BaseNotify implements Channel
                         'title' => $btn['title'] ?? '',
                         'url' => $btn['url'] ?? '',
                     ];
-                }, is_array(current($buttons))?$buttons:[$buttons]),
+                }, is_array(current($buttons)) ? $buttons : [$buttons]),
                 'card_action' => [
                     'type' => 1,
                     'url' => $url,
@@ -155,6 +166,7 @@ class Wechat extends BaseNotify implements Channel
     }
 
     /**
+     * 模板消息
      *
      * @param array $data
      * @return $this
@@ -262,6 +274,11 @@ class Wechat extends BaseNotify implements Channel
 
     }
 
+    /**
+     * @all
+     * @param bool $isAll
+     * @return $this|mixed
+     */
     public function atAll(bool $isAll = true)
     {
         if (!isset($this->message_at['mentioned_list'])) {
@@ -278,6 +295,32 @@ class Wechat extends BaseNotify implements Channel
     }
 
 
+    /**
+     * 合并 @xxx
+     * @return mixed|void
+     */
+    public function concatAt()
+    {
+
+        if ($this->message['msgtype'] === 'text') {
+            $this->message['text'] = array_merge($this->message['text'], $this->message_at);
+        } elseif ($this->message['msgtype'] === 'markdown') {
+            $this->message['markdown'] = array_merge($this->message['markdown'], $this->message_at);
+            foreach ($this->message_at as $k => $info) {
+                if ($k === 'mentioned_list') {
+                    $this->message['markdown']['content'] .= implode(' ', array_map(function ($item) {
+                        return ' <@' . ltrim($item, '@') . '>';
+                    }, $info));
+                }
+            }
+        }
+    }
+
+    /**
+     * 消息签名
+     *
+     * @return mixed|void
+     */
     public function makeSignature()
     {
         // TODO: Implement makeSignature() method.

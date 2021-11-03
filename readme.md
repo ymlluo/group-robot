@@ -65,7 +65,7 @@ Table of Contents
     * [Laravel 支持](#laravel-支持)
     * [进阶用法](#进阶用法)
         * [使用队列同时发送多条消息](#使用队列同时发送多条消息)
-        * [定义渠道](#定义渠道)
+        * [定义平台](#定义平台)
     * [Contributing](#contributing)
     * [Security](#security)
     * [License](#license)
@@ -661,7 +661,7 @@ $robot->rich([
 ```php 
 $webhook = 'https://oapi.dingtalk.com/robot/send?access_token=xxxx';
 $secret = 'xxx';
-$result =app('grouprobot')->channel('dingtalk')->to($webhook)->secret($secret)->text('hello world')->send();
+$result =app('grouprobot')->platform('dingtalk')->to($webhook)->secret($secret)->text('hello world')->send();
 dd($result);
 ```
 
@@ -684,17 +684,17 @@ $robot->queue()
 
 
 
-### 定义渠道
-> 可以实现 src/Contracts/Channel.php 接口，通过自定义渠道发送消息
+### 定义平台
+> 可以实现 src/Contracts/Platform.php 接口，通过自定义平台发送消息
 ```php 
 <?php
 
 namespace App;
 
-use Ymlluo\GroupRobot\Contracts\Channel;
+use Ymlluo\GroupRobot\Contracts\Platform;
 use Ymlluo\GroupRobot\Notify\BaseNotify;
 
-class CustomerChannel extends BaseNotify implements Channel
+class CustomerPlatform extends BaseNotify implements Platform
 {
     // todo
 }
@@ -704,7 +704,7 @@ class CustomerChannel extends BaseNotify implements Channel
 ```php 
 $webhook = 'https://xxx.com/webhook/xxx';
 $robot = new GroupRobot();
-$robot->extendChannel(new CustomerChannel())->to($webhook)->text("hello !")->send();
+$robot->extendPlatform(new CustomerPlatform())->to($webhook)->text("hello !")->send();
 ```
 ------
 

@@ -2,7 +2,7 @@
 
 namespace Ymlluo\GroupRobot;
 
-use Ymlluo\GroupRobot\Contracts\Channel;
+use Ymlluo\GroupRobot\Contracts\Platform;
 use Ymlluo\GroupRobot\Notify\Dingtalk;
 use Ymlluo\GroupRobot\Notify\Feishu;
 use Ymlluo\GroupRobot\Notify\Wechat;
@@ -32,8 +32,8 @@ use Ymlluo\GroupRobot\Notify\Wechat;
  */
 class GroupRobot
 {
-    public $channel;
-    public $configs = [];
+    public $platform;
+
 
     public $copies = [];
 
@@ -43,46 +43,48 @@ class GroupRobot
 
     public $results = [];
 
-    public $alias = '';
 
-    public $channelName = '';
-
-    public function __construct($channelName = '', $webhook = '', $secret = '', $alias = '')
+    public function __construct($platform = '', $webhook = '', $secret = '', $alias = '')
     {
-        if ($channelName) {
-            $this->channel = $this->resolve($channelName);
-            $this->channel->name($channelName);
-            $this->channel->alias($alias);
-            $this->channel->to($webhook);
-            $this->channel->secret($secret);
+        if ($platform) {
+            $this->platform = $this->resolve($platform);
+            $this->platform->name($platform);
+            $this->platform->alias($alias);
+            $this->platform->to($webhook);
+            $this->platform->secret($secret);
         }
     }
 
 
     /**
-     * 自定义 channel
-     * @param Channel $channel
+     * 设置平台
+     *
+     * @param string $name
+     * @return $this
      */
-    public function channel(string $channel)
+    public function platform(string $name): GroupRobot
     {
-        $this->channel = $this->resolve($channel);
+        $this->platform = $this->resolve($name);
         return $this;
     }
 
     /**
      * 自定义扩展
      *
-     * @param Channel $channel
-     * @param string $channelName
+     * @param Platform $platform
+     * @param string $webhook
+     * @param string $secret
+     * @param string $name
+     * @param string $alias
      * @return $this
      */
-    public function extendChannel(Channel $channel, $webhook = '', $secret = '', $name = '', $alias = ''): GroupRobot
+    public function extendPlatform(Platform $platform, $webhook = '', $secret = '', $name = '', $alias = ''): GroupRobot
     {
-        $this->channel = $channel;
-        $this->channel->name($name);
-        $this->channel->alias($alias);
-        $this->channel->to($webhook);
-        $this->channel->secret($secret);
+        $this->platform = $platform;
+        $this->platform->name($name);
+        $this->platform->alias($alias);
+        $this->platform->to($webhook);
+        $this->platform->secret($secret);
         $this->copies[] = $this;
         return $this;
     }
@@ -97,7 +99,7 @@ class GroupRobot
         if (method_exists($this, $method)) {
             return call_user_func([$this, $method]);
         } else {
-            throw new InvalidArgumentException("Channel [{$name}] is not supported.");
+            throw new InvalidArgumentException("Platform [{$name}] is not supported.");
         }
     }
 
@@ -131,7 +133,7 @@ class GroupRobot
 
 
     /**
-     * Pass dynamic methods call onto channel.
+     * Pass dynamic methods call onto platform.
      *
      * @param string $method
      * @param array $parameters
@@ -154,8 +156,8 @@ class GroupRobot
      */
     public function cc(string $webhook, string $secret = '', string $name = '', string $alias = '')
     {
-        if ($name || $this->channel) {
-            $copy = new self($name ?: $this->channel->getName(), $webhook, $secret, $alias);
+        if ($name || $this->platform) {
+            $copy = new self($name ?: $this->platform->getName(), $webhook, $secret, $alias);
             $this->copies[] = $copy;
         }
 
@@ -170,22 +172,22 @@ class GroupRobot
     public function send(): array
     {
         foreach ($this->buffers as $key => $buffer) {
-            if (method_exists(get_class($this->channel), $buffer[0])) {
-                call_user_func_array([$this->channel, $buffer[0]], $buffer[1]);
+            if (method_exists(get_class($this->platform), $buffer[0])) {
+                call_user_func_array([$this->platform, $buffer[0]], $buffer[1]);
                 if (in_array($buffer[0], ['secret', 'to', 'name', 'alias', 'result', 'atAll'])) {
                     unset($this->buffers[$key]);
                 }
             }
         }
-        $this->result = $this->channel->send();
+        $this->result = $this->platform->send();
         $this->results[] = [
-            'name' => $this->channel->getName(),
-            'alias' => $this->channel->getAlias(),
+            'name' => $this->platform->getName(),
+            'alias' => $this->platform->getAlias(),
             'message' => $this->message(),
             'result' => $this->result()
         ];
         if ($this->copies) {
-            $this->channel = array_shift($this->copies)->channel;
+            $this->platform = array_shift($this->copies)->platform;
             $this->send();
         }
         $this->buffers = [];
@@ -194,7 +196,7 @@ class GroupRobot
 
     public function message()
     {
-        return $this->channel->message;
+        return $this->platform->message;
     }
 
     public function result($withMessage = false)

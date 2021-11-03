@@ -6,7 +6,7 @@ namespace Ymlluo\GroupRobot\Contracts;
 
 use phpDocumentor\Reflection\Types\Mixed_;
 
-interface Channel
+interface Platform
 {
 
     /**
@@ -114,7 +114,7 @@ interface Channel
     public function secret(string $secret);
 
     /**
-     * 秘钥签名
+     * 消息签名
      * @return mixed
      */
     public function makeSignature();
@@ -127,19 +127,25 @@ interface Channel
     public function result();
 
     /**
-     * 发送渠道名称
-     * @param string $channelName
+     * 发送平台名称
+     * @param string $name
      * @return mixed
      */
-    public function name(string $channelName);
+    public function name(string $name);
 
     /**
-     * 发送渠道别名
+     * 发送平台别名
      *
      * @param string $alias
      * @return mixed
      */
     public function alias(string $alias);
 
+    /**
+     * 处理 @xxx 消息
+     *
+     * @return mixed
+     */
+    public function concatAt();
 
 }

@@ -8,51 +8,88 @@ use GuzzleHttp\Client;
 
 class BaseNotify
 {
-    public $webhook;
+    /** @var string webhook url */
+    public $webhook = '';
 
-    public $message;
+    /** @var array 消息详情 */
+    public $message = [];
 
+    /** @var bool 使用队列发送 */
     public $use_queue = false;
 
+    /** @var array 消息队列缓存 */
     public $message_queues = [];
 
+    /** @var array @某人 */
     public $message_at = [];
 
-    public $message_at_type;
 
-    protected $secret;
+    /** @var string 平台名称 */
+    protected $platform = '';
 
-    public $result;
+    /** @var string 秘钥 */
+    protected $secret = '';
 
+    /** @var array 发送结果 */
+    public $result = [];
+
+    /** @var string 机器人别名 */
     public $alias = '';
 
+    /** @var string 机器人名称 */
     public $name = '';
 
-
+    /**
+     * 设置机器人别名
+     *
+     * @param string $name
+     * @return $this
+     */
     public function alias(string $name)
     {
         $this->alias = $name;
         return $this;
     }
 
+    /**
+     * 设置机器人名称
+     *
+     * @param string $name
+     * @return $this
+     */
     public function name(string $name)
     {
         $this->name = $name;
         return $this;
     }
 
+    /**
+     * 机器人别名
+     *
+     * @return string
+     */
     public function getAlias(): string
     {
         return $this->alias;
     }
 
+    /**
+     * 机器人名称
+     *
+     * @return string
+     */
     public function getName(): string
     {
 
         return $this->name;
     }
 
-
+    /**
+     * 设置秘钥
+     *
+     * @param string $secret
+     * @return $this
+     */
     public function secret(string $secret)
     {
         $this->secret = $secret;
@@ -86,7 +123,7 @@ class BaseNotify
 
     protected function handleFile()
     {
-        throw new \Exception("channel handleFile function not set");
+        throw new \Exception("platform handleFile function not set");
     }
 
     public function queue()
@@ -112,7 +149,7 @@ class BaseNotify
     {
         $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
         $path = tempnam(sys_get_temp_dir(), '') . '.' . $extension;
-        $this->getClient()->request('GET', $url, ['timeout'=>30,'sink' => $path, 'verify' => false]);
+        $this->getClient()->request('GET', $url, ['sink' => $path, 'verify' => false]);
         return $path;
     }
 
@@ -134,6 +171,8 @@ class BaseNotify
         }
         if ($this->use_queue && $this->message_queues) {
             $this->message = array_shift($this->message_queues);
+        } else {
+            $this->message_queues = [];
         }
         if (isset($this->message['file_queue'])) {
             $this->handleFile();
@@ -141,22 +180,10 @@ class BaseNotify
         if (!isset($this->message)) {
             throw new \Exception('message not set!');
         }
-
-        if (isset($this->message['at_allow']) && $this->message['at_allow']) {
-            if ($this->message_at) {
-                if (isset($this->message['at_append'])) {
-                    $concat = $this->message['at_append'] === 'concat';
-                    $this->arrayAppend($this->message, $this->message_at, $concat);
-                }
-                if (isset($this->message['at_key'])) {
-                    $this->arrayAppend($this->message, [$this->message['at_key'] => $this->message_at]);
-                }
-            }
-            $this->message_at=[];
-            unset($this->message['at_allow'], $this->message['at_key'], $this->message['at_concat'], $this->message['at_append']);
+        if ($this->message_at) {
+            $this->concatAt();
         }
-
-        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false,'timeout'=>10]);
+        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false, 'timeout' => 10]);
         $result = json_decode((string)$response->getBody(), true);
         $this->result = $result;
         if ($this->use_queue && $this->message_queues) {
@@ -177,44 +204,14 @@ class BaseNotify
     }
 
     /**
+     * HTTP 客户端
+     *
      * @param array $config
      * @return Client
      */
     public function getClient($config = [])
     {
         return new Client($config);
-    }
-
-
-    /**
-     * 补充信息
-     *
-     * @param $array
-     * @param $append
-     * @param false $concat
-     */
-    protected function arrayAppend(&$array, $append, $concat = false)
-    {
-        if (is_array($append)) {
-            foreach ($append as $k => $value) {
-                if (isset($array[$k])) {
-                    if (is_array($array[$k])) {
-                        $this->arrayAppend($array[$k], $value, $concat);
-                    } else {
-                        if ($concat) {
-                            $array[$k] .= $value;
-                        }
-                    }
-                } else {
-                    if ($k === 0) {
-                        $array[] = $value;
-                    } else {
-                        $array[$k] = $value;
-                    }
-                }
-            }
-        }
-
     }
 
     /**

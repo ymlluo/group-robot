@@ -3,53 +3,79 @@
 
 namespace Ymlluo\GroupRobot\Notify;
 
+use Ymlluo\GroupRobot\Contracts\Platform;
 
-use Ymlluo\GroupRobot\Contracts\Channel;
-
-class Dingtalk extends BaseNotify implements Channel
+class Dingtalk extends BaseNotify implements Platform
 {
+    protected $platform = 'dingtalk';
 
+    /**
+     * 文本消息
+     *
+     * @param string $content
+     * @return $this|mixed
+     */
     public function text(string $content)
     {
-        $this->message_at_type = 'text';
         $this->message = [
             'msgtype' => 'text',
             'text' => [
                 'content' => $content
-            ],
-            'at_allow' => true,
-            'at_append' => 'merge'
+            ]
         ];
         $this->addQueue();
         return $this;
     }
 
+    /**
+     * markdown 消息
+     *
+     * @param string $markdown
+     * @param string $title
+     * @return $this|mixed
+     */
     public function markdown(string $markdown, string $title = '')
     {
-        $this->message_at_type = 'markdown';
         $this->message = [
             'msgtype' => 'markdown',
             'markdown' => [
                 'title' => $title ?? "图文消息",
                 'text' => $markdown
-            ],
-            'at_allow' => true,
-            'at_append' => 'merge'
+            ]
         ];
         $this->addQueue();
         return $this;
     }
 
+    /**
+     * 文件消息
+     *
+     * @param string $path
+     * @param string $filename
+     * @return $this|mixed
+     */
     public function file(string $path, string $filename = '')
     {
         return $this->markdown("[$filename]($path)", $filename);
     }
 
+    /**
+     * 图片消息
+     *
+     * @param string $path
+     * @return $this|mixed
+     */
     public function image(string $path)
     {
         return $this->markdown("![image]($path)", "图片消息");
     }
 
+    /**
+     * 图文消息
+     *
+     * @param array $news
+     * @return $this|mixed
+     */
     public function news(array $news)
     {
         if (!is_array(current($news))) {
@@ -104,7 +130,17 @@ class Dingtalk extends BaseNotify implements Channel
         return $this;
     }
 
-
+    /**
+     * 卡片消息
+     *
+     * @param string $title
+     * @param string $description
+     * @param string $image
+     * @param string $url
+     * @param array $buttons
+     * @param array $extra
+     * @return $this|mixed
+     */
     public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = [])
     {
         $imageStr = $image ? "![screenshot]($image) \n\n" : "";
@@ -160,11 +196,13 @@ class Dingtalk extends BaseNotify implements Channel
      */
     public function atUsers(array $userIds, bool $isAll = false)
     {
-        if (!isset($this->message_at['at']['atUserIds'])) {
-            $this->message_at['at']['atUserIds'] = [];
+        if (!isset($this->message_at['atUserIds'])) {
+            $this->message_at['atUserIds'] = [];
         }
-        $this->message_at['at']['atUserIds'] = array_values(array_unique(array_merge((array)$this->message_at['at']['atUserIds'] ?? [], $userIds)));
-        $this->atAll($isAll);
+        $this->message_at['atUserIds'] = array_values(array_unique(array_merge((array)$this->message_at['atUserIds'] ?? [], $userIds)));
+        if ($isAll) {
+            $this->atAll($isAll);
+        }
         return $this;
     }
 
@@ -177,22 +215,65 @@ class Dingtalk extends BaseNotify implements Channel
      */
     public function atMobiles(array $phoneNums, bool $isAll = false)
     {
-        if (!isset($this->message_at['at']['atMobiles'])) {
-            $this->message_at['at']['atMobiles'] = [];
+        if (!isset($this->message_at['atMobiles'])) {
+            $this->message_at['atMobiles'] = [];
         }
-        $this->message_at['at']['atMobiles'] = array_values(array_unique(array_merge((array)$this->message_at['at']['atMobiles'] ?? [], $phoneNums)));
-        $this->atAll($isAll);
+        $this->message_at['atMobiles'] = array_values(array_unique(array_merge((array)$this->message_at['atMobiles'] ?? [], $phoneNums)));
+        if ($isAll) {
+            $this->atAll($isAll);
+        }
         return $this;
 
     }
 
+    /**
+     * @all
+     *
+     * @param bool $isAll
+     * @return $this|mixed
+     */
     public function atAll(bool $isAll = true)
     {
-        $this->message_at['at']['isAtAll'] = $isAll;
+        $this->message_at['isAtAll'] = $isAll;
         return $this;
     }
 
+    /**
+     * 合并 @xxx
+     *
+     * @return mixed|void
+     */
+    public function concatAt()
+    {
+        $this->message['at'] = $this->message_at;
+        if (isset($this->message_at['isAtAll']) && $this->message_at['isAtAll']) {
+            if ($this->message['msgtype'] === 'markdown') {
+                $this->message['markdown']['text'] .= " @all";
+            }
+            if ($this->message['msgtype'] === 'text') {
+                $this->message['text']['content'] .= " @all";
+            }
+        } else {
+            foreach ($this->message_at as $info) {
+                if ($this->message['msgtype'] === 'markdown') {
+                    $this->message['markdown']['text'] .= implode(' ', array_map(function ($item) {
+                        return '@' . ltrim($item, '@');
+                    }, $info));
+                }
+                if ($this->message['msgtype'] === 'text') {
+                    $this->message['text']['content'] .= implode(' ', array_map(function ($item) {
+                        return '@' . ltrim($item, '@');
+                    }, $info));
+                }
+            }
+        }
+    }
 
+    /**
+     * 消息签名
+     *
+     * @return mixed|void
+     */
     public function makeSignature()
     {
         $t = intval(microtime(true) * 1000);
