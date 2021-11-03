@@ -142,7 +142,7 @@ class Wechat extends BaseNotify implements Channel
                         'title' => $btn['title'] ?? '',
                         'url' => $btn['url'] ?? '',
                     ];
-                }, array_slice($buttons, 0, 3)),
+                }, is_array(current($buttons))?$buttons:[$buttons]),
                 'card_action' => [
                     'type' => 1,
                     'url' => $url,
@@ -238,7 +238,7 @@ class Wechat extends BaseNotify implements Channel
         if (!isset($this->message_at['mentioned_list'])) {
             $this->message_at['mentioned_list'] = [];
         }
-        $this->message_at['mentioned_list'] = array_merge((array)$this->message_at['mentioned_list'] ?? [], $userIds);
+        $this->message_at['mentioned_list'] = array_values(array_unique(array_merge((array)$this->message_at['mentioned_list'] ?? [], $userIds)));
         $this->atAll($isAll);
         return $this;
 
@@ -256,7 +256,7 @@ class Wechat extends BaseNotify implements Channel
         if (!isset($this->message_at['mentioned_mobile_list'])) {
             $this->message_at['mentioned_mobile_list'] = [];
         }
-        $this->message_at['mentioned_mobile_list'] = array_merge((array)$this->message_at['mentioned_mobile_list'] ?? [], $phoneNums);;
+        $this->message_at['mentioned_mobile_list'] = array_values(array_unique(array_merge((array)$this->message_at['mentioned_mobile_list'] ?? [], $phoneNums)));;
         $this->atAll($isAll);
         return $this;
 
@@ -267,8 +267,13 @@ class Wechat extends BaseNotify implements Channel
         if (!isset($this->message_at['mentioned_list'])) {
             $this->message_at['mentioned_list'] = [];
         }
-        $this->message_at['mentioned_list'] = array_merge((array)$this->message_at['mentioned_list'] ?? [], ["@all"]);
-
+        if ($isAll) {
+            $this->message_at['mentioned_list'] = array_values(array_unique(array_merge((array)$this->message_at['mentioned_list'] ?? [], ["@all"])));
+        } else {
+            $this->message_at['mentioned_list'] = array_values(array_unique(array_filter($this->message_at['mentioned_list'], function ($item) {
+                return $item !== '@all';
+            })));
+        }
         return $this;
     }
 

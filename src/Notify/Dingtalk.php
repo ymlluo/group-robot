@@ -17,8 +17,8 @@ class Dingtalk extends BaseNotify implements Channel
             'text' => [
                 'content' => $content
             ],
-            'at_allow'=>true,
-            'at_append'=>'merge'
+            'at_allow' => true,
+            'at_append' => 'merge'
         ];
         $this->addQueue();
         return $this;
@@ -33,8 +33,8 @@ class Dingtalk extends BaseNotify implements Channel
                 'title' => $title ?? "图文消息",
                 'text' => $markdown
             ],
-            'at_allow'=>true,
-            'at_append'=>'merge'
+            'at_allow' => true,
+            'at_append' => 'merge'
         ];
         $this->addQueue();
         return $this;
@@ -160,10 +160,10 @@ class Dingtalk extends BaseNotify implements Channel
      */
     public function atUsers(array $userIds, bool $isAll = false)
     {
-        if (!isset($this->message_at['at']['atUserIds'])){
+        if (!isset($this->message_at['at']['atUserIds'])) {
             $this->message_at['at']['atUserIds'] = [];
         }
-        $this->message_at['at']['atUserIds'] = array_merge((array)$this->message_at['at']['atUserIds']??[],$userIds);
+        $this->message_at['at']['atUserIds'] = array_values(array_unique(array_merge((array)$this->message_at['at']['atUserIds'] ?? [], $userIds)));
         $this->atAll($isAll);
         return $this;
     }
@@ -177,10 +177,10 @@ class Dingtalk extends BaseNotify implements Channel
      */
     public function atMobiles(array $phoneNums, bool $isAll = false)
     {
-        if (!isset($this->message_at['at']['atMobiles'])){
+        if (!isset($this->message_at['at']['atMobiles'])) {
             $this->message_at['at']['atMobiles'] = [];
         }
-        $this->message_at['at']['atMobiles'] = array_merge((array)$this->message_at['at']['atMobiles']??[],$phoneNums);
+        $this->message_at['at']['atMobiles'] = array_values(array_unique(array_merge((array)$this->message_at['at']['atMobiles'] ?? [], $phoneNums)));
         $this->atAll($isAll);
         return $this;
 

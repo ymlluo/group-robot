@@ -29,7 +29,6 @@ class BaseNotify
     public $name = '';
 
 
-
     public function alias(string $name)
     {
         $this->alias = $name;
@@ -113,7 +112,7 @@ class BaseNotify
     {
         $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
         $path = tempnam(sys_get_temp_dir(), '') . '.' . $extension;
-        $this->getClient()->request('GET', $url, ['sink' => $path, 'verify' => false]);
+        $this->getClient()->request('GET', $url, ['timeout'=>30,'sink' => $path, 'verify' => false]);
         return $path;
     }
 
@@ -153,15 +152,17 @@ class BaseNotify
                     $this->arrayAppend($this->message, [$this->message['at_key'] => $this->message_at]);
                 }
             }
+            $this->message_at=[];
             unset($this->message['at_allow'], $this->message['at_key'], $this->message['at_concat'], $this->message['at_append']);
         }
 
-        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false]);
+        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false,'timeout'=>10]);
         $result = json_decode((string)$response->getBody(), true);
         $this->result = $result;
-        if ($this->message_queues) {
+        if ($this->use_queue && $this->message_queues) {
             return $this->send();
         }
+
         return $result;
     }
 
@@ -183,6 +184,7 @@ class BaseNotify
     {
         return new Client($config);
     }
+
 
     /**
      * 补充信息

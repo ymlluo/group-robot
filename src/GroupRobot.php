@@ -25,7 +25,6 @@ use Ymlluo\GroupRobot\Notify\Wechat;
  * @method \Ymlluo\GroupRobot\GroupRobot atAll(bool $isAll = true);
  * @method \Ymlluo\GroupRobot\GroupRobot makeSignature();
  * @method \Ymlluo\GroupRobot\GroupRobot queue()
- * @method array result()
  * @method \Ymlluo\GroupRobot\GroupRobot getClient($config = [])
  *
  *
@@ -155,7 +154,7 @@ class GroupRobot
      */
     public function cc(string $webhook, string $secret = '', string $name = '', string $alias = '')
     {
-        if ($name || $this->channel){
+        if ($name || $this->channel) {
             $copy = new self($name ?: $this->channel->getName(), $webhook, $secret, $alias);
             $this->copies[] = $copy;
         }
@@ -170,10 +169,10 @@ class GroupRobot
      */
     public function send(): array
     {
-        foreach ($this->buffers as $key=>$buffer) {
+        foreach ($this->buffers as $key => $buffer) {
             if (method_exists(get_class($this->channel), $buffer[0])) {
                 call_user_func_array([$this->channel, $buffer[0]], $buffer[1]);
-                if (in_array($buffer[0],['secret', 'to','name','alias'])){
+                if (in_array($buffer[0], ['secret', 'to', 'name', 'alias', 'result', 'atAll'])) {
                     unset($this->buffers[$key]);
                 }
             }
@@ -182,11 +181,29 @@ class GroupRobot
         $this->results[] = [
             'name' => $this->channel->getName(),
             'alias' => $this->channel->getAlias(),
-            'result' => $this->result
+            'message' => $this->message(),
+            'result' => $this->result()
         ];
         if ($this->copies) {
             $this->channel = array_shift($this->copies)->channel;
             $this->send();
+        }
+        $this->buffers = [];
+        return $this->result;
+    }
+
+    public function message()
+    {
+        return $this->channel->message;
+    }
+
+    public function result($withMessage = false)
+    {
+        if ($withMessage) {
+            return [
+                'message' => $this->message(),
+                'result' => $this->result()
+            ];
         }
         return $this->result;
     }
