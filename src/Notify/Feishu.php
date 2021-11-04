@@ -95,7 +95,7 @@ class Feishu extends BaseNotify implements Platform
      */
     public function file(string $path, string $filename = '')
     {
-        if (!filter_var($path,FILTER_VALIDATE_URL)){
+        if (!filter_var($path, FILTER_VALIDATE_URL)) {
             return $this;
         }
         return $this->markdown("[$filename]($path)", $filename);
@@ -110,7 +110,7 @@ class Feishu extends BaseNotify implements Platform
      */
     public function image(string $path)
     {
-        if (!filter_var($path,FILTER_VALIDATE_URL)){
+        if (!filter_var($path, FILTER_VALIDATE_URL)) {
             return $this;
         }
         //todo 只能显示链接
@@ -284,5 +284,21 @@ class Feishu extends BaseNotify implements Platform
         $sign = base64_encode(hash_hmac('sha256', '', $t . "\n" . $this->secret, true));
         $this->message['timestamp'] = strval($t);
         $this->message['sign'] = $sign;
+    }
+
+    /**
+     * 格式化结果
+     *
+     * @param array $result
+     * @return array
+     */
+    public function formatResult(array $result): array
+    {
+        $data = [];
+        if ($result) {
+            $data['errcode'] = $result['StatusCode'] ?? -19999;
+            $data['errmsg'] = $result['StatusMessage'] ?? '';
+        }
+        return $data;
     }
 }

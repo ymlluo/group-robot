@@ -40,36 +40,16 @@ class BaseNotify
     public $name = '';
 
     /**
-     * 设置机器人别名
+     * 平台别名
      *
      * @param string $name
-     * @return $this
-     */
-    public function alias(string $name)
-    {
-        $this->alias = $name;
-        return $this;
-    }
-
-    /**
-     * 设置机器人名称
-     *
-     * @param string $name
-     * @return $this
-     */
-    public function name(string $name)
-    {
-        $this->name = $name;
-        return $this;
-    }
-
-    /**
-     * 机器人别名
-     *
      * @return string
      */
-    public function getAlias(): string
+    public function alias(string $name = '')
     {
+        if ($name) {
+            $this->alias = $name;
+        }
         return $this->alias;
     }
 
@@ -78,10 +58,9 @@ class BaseNotify
      *
      * @return string
      */
-    public function getName(): string
+    public function platform(): string
     {
-
-        return $this->name;
+        return $this->platform;
     }
 
     /**
@@ -177,17 +156,17 @@ class BaseNotify
         if (isset($this->message['file_queue'])) {
             $this->handleFile();
         }
-        if (!isset($this->message)) {
-            throw new \Exception('message not set!');
+        $result = [];
+        if ($this->message) {
+            if ($this->message_at) {
+                $this->concatAt();
+            }
+            $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false, 'timeout' => 10]);
+            $result = $this->formatResult(json_decode((string)$response->getBody(), true));
         }
-        if ($this->message_at) {
-            $this->concatAt();
-        }
-        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false, 'timeout' => 10]);
-        $result = json_decode((string)$response->getBody(), true);
         $this->result[] = [
-            'name' => $this->getName(),
-            'alias' => $this->getAlias(),
+            'platform' => $this->platform(),
+            'alias' => $this->alias(),
             'message' => $this->message,
             'result' => $result
         ];
@@ -206,6 +185,16 @@ class BaseNotify
     public function result()
     {
         return $this->result;
+    }
+
+    public function formatResult(array $result): array
+    {
+        $data = [];
+        if ($result) {
+            $data['errcode'] = $result['errcode'] ?? -19999;
+            $data['errmsg'] = $result['errmsg'] ?? '';
+        }
+        return $data;
     }
 
     /**

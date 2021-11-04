@@ -45,16 +45,20 @@ class GroupRobot
 
     /**
      * GroupRobot constructor.
-     * @param string $platform 发送平台，wechat:企业微信,dingtalk:钉钉,feishu:飞书
+     * @param mixed $platform 发送平台，wechat:企业微信,dingtalk:钉钉,feishu:飞书
      * @param string $webhook webhook 地址
      * @param string $secret 秘钥,加密方式加签时必填，企业微信不支持这个参数
      * @param string $alias 别名，多渠道发送时方便区分结果
      */
-    public function __construct($platform = '', $webhook = '', $secret = '', $alias = '')
+    public function __construct($platform = '', string $webhook = '', string $secret = '', string $alias = '')
     {
         if ($platform) {
-            $this->platform = $this->resolve($platform);
-            $this->platform->name($platform);
+            if ($platform instanceof Platform) {
+                $this->platform = $platform;
+            }
+            if (is_string($platform)) {
+                $this->platform = $this->resolve($platform);
+            }
             $this->platform->alias($alias);
             $this->platform->to($webhook);
             $this->platform->secret($secret);
@@ -77,35 +81,29 @@ class GroupRobot
     /**
      * 自定义扩展
      *
-     * @param Platform $platform
+     * @param mixed $platform
      * @param string $webhook
      * @param string $secret
-     * @param string $name
      * @param string $alias
      * @return $this
      */
-    public function extendPlatform(Platform $platform, $webhook = '', $secret = '', $name = '', $alias = ''): GroupRobot
+    public function extendPlatform(Platform $platform, string $webhook, string $secret = '', string $alias = ''): GroupRobot
     {
-        $this->platform = $platform;
-        $this->platform->name($name);
-        $this->platform->alias($alias);
-        $this->platform->to($webhook);
-        $this->platform->secret($secret);
-        $this->copies[] = $this;
+        $this->copies[] = new self($platform, $webhook, $secret, $alias);
         return $this;
     }
 
 
-    public function resolve($name)
+    public function resolve($platform)
     {
-        if (!$name) {
+        if (!$platform) {
             return null;
         }
-        $method = ucfirst($name) . 'Notify';
+        $method = ucfirst($platform) . 'Notify';
         if (method_exists($this, $method)) {
             return call_user_func([$this, $method]);
         } else {
-            throw new InvalidArgumentException("Platform [{$name}] is not supported.");
+            throw new InvalidArgumentException("Platform [{$platform}] is not supported.");
         }
     }
 
@@ -154,19 +152,16 @@ class GroupRobot
     }
 
     /**
+     *
+     * @param mixed $platform
      * @param string $webhook
      * @param string $secret
-     * @param string $platform 支持：wechat / dingtalk / feishu
      * @param string $alias
      * @return $this
      */
-    public function cc(string $webhook, string $secret = '', string $platform = '', string $alias = '')
+    public function cc($platform, string $webhook, string $secret = '', string $alias = '')
     {
-        if ($platform || $this->platform) {
-            $copy = new self($platform ?: $this->platform->getName(), $webhook, $secret, $alias);
-            $this->copies[] = $copy;
-        }
-
+        $this->copies[] = new self($platform, $webhook, $secret, $alias);
         return $this;
     }
 
@@ -195,7 +190,7 @@ class GroupRobot
             $this->send();
         }
         $this->buffers = [];
-        return $this->result;
+        return $this->getResults();
     }
 
     public function message()
@@ -220,7 +215,7 @@ class GroupRobot
      */
     public function getResults(): array
     {
-        return $this->results;
+        return array_merge([], ...$this->results);
     }
 
 }

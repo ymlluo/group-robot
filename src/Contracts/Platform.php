@@ -128,10 +128,9 @@ interface Platform
 
     /**
      * 发送平台名称
-     * @param string $name
      * @return mixed
      */
-    public function name(string $name);
+    public function platform();
 
     /**
      * 发送平台别名
@@ -147,5 +146,13 @@ interface Platform
      * @return mixed
      */
     public function concatAt();
+
+
+    /**
+     * @param array $result
+     * @return array
+     */
+    public function formatResult(array $result): array;
+
 
 }

@@ -672,7 +672,7 @@ $robot->rich([
 ```php 
 $webhook = 'https://oapi.dingtalk.com/robot/send?access_token=xxxx';
 $secret = 'xxx';
-$result =app('grouprobot')->platform('dingtalk')->to($webhook)->secret($secret)->text('hello world')->send();
+$results = app('grouprobot')->queue()->text("Hello ")->text('Laravel')->cc('dingtalk',$webhook, $secret, 'ding_1')->send();
 dd($result);
 ```
 
@@ -696,9 +696,9 @@ $robot = new GroupRobot();
 $robot->text("开始@".date('Y-m-d H:i:s',time()))
       ->text("结束@".date('Y-m-d H:i:s',time()))
       ->queue()
-      ->cc('https://oapi.dingtalk.com/robot/send?access_token==xxxx','xxx','dingtalk','ding1')
-      ->cc('https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxx','','wechat','wx_1')
-      ->cc('https://open.feishu.cn/open-apis/bot/v2/hook/xxxx','xxx','feishu','feishu1')
+      ->cc('dingtalk','https://oapi.dingtalk.com/robot/send?access_token==xxxx','xxx','ding1')
+      ->cc('wechat','https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxx','','wx_1')
+      ->cc('feishu','https://open.feishu.cn/open-apis/bot/v2/hook/xxxx','xxx','feishu1')
       ->send();
 ```
 
@@ -726,7 +726,8 @@ class CustomerPlatform extends BaseNotify implements Platform
 ```php 
 $webhook = 'https://xxx.com/webhook/xxx';
 $robot = new GroupRobot();
-$robot->extendPlatform(new CustomerPlatform())->to($webhook)->text("hello !")->send();
+$custom = new CustomerPlatform(); 
+$robot->extendPlatform($custom,$webhook,$secret='',$alias='c1')->text("hello !")->send();
 ```
 ------
 

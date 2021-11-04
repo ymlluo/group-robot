@@ -67,7 +67,7 @@ class Dingtalk extends BaseNotify implements Platform
      */
     public function image(string $path)
     {
-        if (!filter_var($path,FILTER_VALIDATE_URL) && file_exists($path)){
+        if (!filter_var($path, FILTER_VALIDATE_URL) && file_exists($path)) {
             $type = pathinfo($path, PATHINFO_EXTENSION);
             $data = file_get_contents($path);
             $path = 'data:image/' . $type . ';base64,' . base64_encode($data);
@@ -284,4 +284,5 @@ class Dingtalk extends BaseNotify implements Platform
         $t = intval(microtime(true) * 1000);
         $this->webhook = $this->webhook . '&timestamp=' . $t . '&sign=' . urlencode(base64_encode(hash_hmac('sha256', $t . "\n" . $this->secret, $this->secret, true)));
     }
+
 }
