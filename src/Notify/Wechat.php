@@ -3,10 +3,12 @@
 
 namespace Ymlluo\GroupRobot\Notify;
 
-use Ymlluo\GroupRobot\Contracts\Channel;
+use Ymlluo\GroupRobot\Contracts\Platform;
 
-class Wechat extends BaseNotify implements Channel
+class Wechat extends BaseNotify implements Platform
 {
+    protected $platform = 'wechat';
+
     public $max_text_length = 2048;
     public $max_md_length = 4096;
 
@@ -21,7 +23,7 @@ class Wechat extends BaseNotify implements Channel
     {
         if (strlen($content) > $this->max_text_length) {
             $this->queue();
-            $lists = $this->chunk_strings($content, $this->max_text_length);
+            $lists = $this->chunkStrings($content, $this->max_text_length);
             foreach ($lists as $text) {
                 $this->text($text);
             }
@@ -32,8 +34,6 @@ class Wechat extends BaseNotify implements Channel
             'text' => [
                 'content' => $content
             ],
-            'at_allow' => true,
-            'at_key' => 'text'
         ];
         $this->addQueue();
         return $this;
@@ -50,7 +50,7 @@ class Wechat extends BaseNotify implements Channel
     {
         if (strlen($markdown) > $this->max_md_length) {
             $this->queue();
-            $lists = $this->chunk_strings($markdown, $this->max_md_length);
+            $lists = $this->chunkStrings($markdown, $this->max_md_length);
             foreach ($lists as $text) {
                 $this->markdown($text, $title);
             }
@@ -122,6 +122,17 @@ class Wechat extends BaseNotify implements Channel
         return $this;
     }
 
+    /**
+     * 卡片消息
+     *
+     * @param string $title
+     * @param string $description
+     * @param string $image
+     * @param string $url
+     * @param array $buttons
+     * @param array $extra
+     * @return $this|mixed
+     */
     public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = [])
     {
         $this->message = [
@@ -142,7 +153,7 @@ class Wechat extends BaseNotify implements Channel
                         'title' => $btn['title'] ?? '',
                         'url' => $btn['url'] ?? '',
                     ];
-                }, array_slice($buttons, 0, 3)),
+                }, is_array(current($buttons)) ? $buttons : [$buttons]),
                 'card_action' => [
                     'type' => 1,
                     'url' => $url,
@@ -155,6 +166,7 @@ class Wechat extends BaseNotify implements Channel
     }
 
     /**
+     * 模板消息
      *
      * @param array $data
      * @return $this
@@ -238,7 +250,7 @@ class Wechat extends BaseNotify implements Channel
         if (!isset($this->message_at['mentioned_list'])) {
             $this->message_at['mentioned_list'] = [];
         }
-        $this->message_at['mentioned_list'] = array_merge((array)$this->message_at['mentioned_list'] ?? [], $userIds);
+        $this->message_at['mentioned_list'] = array_values(array_unique(array_merge((array)$this->message_at['mentioned_list'] ?? [], $userIds)));
         $this->atAll($isAll);
         return $this;
 
@@ -256,23 +268,59 @@ class Wechat extends BaseNotify implements Channel
         if (!isset($this->message_at['mentioned_mobile_list'])) {
             $this->message_at['mentioned_mobile_list'] = [];
         }
-        $this->message_at['mentioned_mobile_list'] = array_merge((array)$this->message_at['mentioned_mobile_list'] ?? [], $phoneNums);;
+        $this->message_at['mentioned_mobile_list'] = array_values(array_unique(array_merge((array)$this->message_at['mentioned_mobile_list'] ?? [], $phoneNums)));;
         $this->atAll($isAll);
         return $this;
 
     }
 
+    /**
+     * @all
+     * @param bool $isAll
+     * @return $this|mixed
+     */
     public function atAll(bool $isAll = true)
     {
         if (!isset($this->message_at['mentioned_list'])) {
             $this->message_at['mentioned_list'] = [];
         }
-        $this->message_at['mentioned_list'] = array_merge((array)$this->message_at['mentioned_list'] ?? [], ["@all"]);
-
+        if ($isAll) {
+            $this->message_at['mentioned_list'] = array_values(array_unique(array_merge((array)$this->message_at['mentioned_list'] ?? [], ["@all"])));
+        } else {
+            $this->message_at['mentioned_list'] = array_values(array_unique(array_filter($this->message_at['mentioned_list'], function ($item) {
+                return $item !== '@all';
+            })));
+        }
         return $this;
     }
 
 
+    /**
+     * 合并 @xxx
+     * @return mixed|void
+     */
+    public function concatAt()
+    {
+
+        if ($this->message['msgtype'] === 'text') {
+            $this->message['text'] = array_merge($this->message['text'], $this->message_at);
+        } elseif ($this->message['msgtype'] === 'markdown') {
+            $this->message['markdown'] = array_merge($this->message['markdown'], $this->message_at);
+            foreach ($this->message_at as $k => $info) {
+                if ($k === 'mentioned_list') {
+                    $this->message['markdown']['content'] .= implode(' ', array_map(function ($item) {
+                        return ' <@' . ltrim($item, '@') . '>';
+                    }, $info));
+                }
+            }
+        }
+    }
+
+    /**
+     * 消息签名
+     *
+     * @return mixed|void
+     */
     public function makeSignature()
     {
         // TODO: Implement makeSignature() method.

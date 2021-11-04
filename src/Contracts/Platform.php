@@ -6,7 +6,7 @@ namespace Ymlluo\GroupRobot\Contracts;
 
 use phpDocumentor\Reflection\Types\Mixed_;
 
-interface Channel
+interface Platform
 {
 
     /**
@@ -77,7 +77,7 @@ interface Channel
      * @param array $buttons ['title'=>'xxx','url'=>'https://xxx.com']
      * @return mixed
      */
-    public function card(string $title,string $description,string $image,string $url,array $buttons=[],array $extra=[]);
+    public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = []);
 
 
     /**
@@ -87,7 +87,7 @@ interface Channel
      * @param bool $isAll
      * @return mixed
      */
-    public function atUsers(array $userIds, bool $isAll=false);
+    public function atUsers(array $userIds, bool $isAll = false);
 
     /**
      * @手机号
@@ -95,7 +95,7 @@ interface Channel
      * @param bool $isAll
      * @return mixed
      */
-    public function atMobiles(array $phoneNums, bool $isAll=false);
+    public function atMobiles(array $phoneNums, bool $isAll = false);
 
     /**
      * @全部用户
@@ -114,7 +114,7 @@ interface Channel
     public function secret(string $secret);
 
     /**
-     * 秘钥签名
+     * 消息签名
      * @return mixed
      */
     public function makeSignature();
@@ -125,6 +125,34 @@ interface Channel
      * @return mixed
      */
     public function result();
+
+    /**
+     * 发送平台名称
+     * @return mixed
+     */
+    public function platform();
+
+    /**
+     * 发送平台别名
+     *
+     * @param string $alias
+     * @return mixed
+     */
+    public function alias(string $alias);
+
+    /**
+     * 处理 @xxx 消息
+     *
+     * @return mixed
+     */
+    public function concatAt();
+
+
+    /**
+     * @param array $result
+     * @return array
+     */
+    public function formatResult(array $result): array;
 
 
 }

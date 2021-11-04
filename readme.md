@@ -38,7 +38,6 @@ Table of Contents
         * [模版卡片](#模版卡片)
     * [钉钉](#钉钉)
         * [初始化](#初始化-1)
-        * [设置密钥](#设置密钥)
         * [原生消息](#原生消息-1)
         * [文本](#文本-1)
         * [Markdown](#markdown-1)
@@ -52,7 +51,6 @@ Table of Contents
         * [actionCard](#actioncard)
     * [飞书](#飞书)
         * [初始化](#初始化-2)
-        * [设置密钥](#设置密钥-1)
         * [原生消息](#原生消息-2)
         * [文本](#文本-2)
         * [Markdown](#markdown-2)
@@ -64,8 +62,9 @@ Table of Contents
         * [富文本](#富文本)
     * [Laravel 支持](#laravel-支持)
     * [进阶用法](#进阶用法)
-        * [使用队列同时发送多条消息](#使用队列同时发送多条消息)
-        * [定义渠道](#定义渠道)
+        * [使用「队列」同时发送多条消息](#使用队列同时发送多条消息)
+        * [使用「抄送」功能向多个平台发送消息](#使用抄送功能向多个平台发送消息)
+        * [定义平台](#定义平台)
     * [Contributing](#contributing)
     * [Security](#security)
     * [License](#license)
@@ -94,16 +93,19 @@ $ composer require ymlluo/group-robot
 ### 初始化
 
 ```php 
-//初始化直接指定webhook
-$webhook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa';
-$robot = new GroupRobot('wechat',$webhook);
-```
 
 ```php 
-//初始化 并设置 webhook 发送地址
+//初始化
 $webhook = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa';
-$robot = new GroupRobot('wechat');
-$robot->to($webhook);
+
+/**
+ * GroupRobot constructor.
+ * @param string $platform 发送平台，wechat:企业微信,dingtalk:钉钉,feishu:飞书
+ * @param string $webhook webhook 地址
+ * @param string $secret 秘钥,加密方式加签时必填，企业微信不支持这个参数
+ * @param string $alias 别名，多渠道发送时方便区分结果
+ */
+$robot = new GroupRobot('wechat', $webhook, '', 'robot_wx_1');
 ```
 
 ### 原生消息
@@ -127,24 +129,30 @@ $robot->text('hello world')->atAll()->send();
 ```
 
 ```php 
-//@用户+全部
-$robot->text('hello world')->atUsers(["wangqing"],true)->send();
+//@用户
+$robot->text('hello world')->atUsers(["wangqing"])->send();
 ```
 
 ```php 
 //@手机号
-$robot->text('hello world')->atMobiles(["13800001111"],false)->send();
+$robot->text('hello world')->atMobiles(["13800001111"])->send();
 ```
 
 ### Markdown
+* 仅支持 @用户
 * markdown内容，最长不超过 4096 个字节。
 * 发送内容超过 4096 个字节，会拆分成多条发送（使用 \n 分割）
 
 ```php
  $robot->markdown("实时新增用户反馈<font color=\"warning\">132例</font>，请相关同事注意。")->send();
 ```
+```php
+ $robot->markdown("### 用户反馈，请相关同事注意。")->atUsers(["wangqing"])->send();
+```
 
 ### 网络图片
+* 程序会下载图片到本地后再上传到微信服务器
+
 ```php
 $robot->image('http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png')->send();
 ```
@@ -154,6 +162,7 @@ $robot->image('/tmp/images/test_pic_msg1.png')->send();
 ```
 
 ### 网络文件
+* 程序会下载文件到本地后再上传到微信服务器
 
 ```php 
 $robot->file('http://www.gov.cn/zhengce/pdfFile/2021_PDF.pdf','政府信息公开目录.pdf')->send();
@@ -317,20 +326,17 @@ $robot->template_card([
 
 //初始化并设置webhook
 $webhook = 'https://oapi.dingtalk.com/robot/send?access_token=XXXXXX';
-$robot = new GroupRobot('dingtalk',$webhook);
+$token = 'xxx';
+
+/**
+ * @param string $platform 发送平台，wechat:企业微信,dingtalk:钉钉,feishu:飞书
+ * @param string $webhook webhook 地址
+ * @param string $secret 秘钥,加密方式加签时必填，企业微信不支持这个参数
+ * @param string $alias 别名，多渠道发送时方便区分结果
+ */
+$robot = new GroupRobot('dingtalk',$webhook,$token,'d1');
 ```
 
-```php
-$robot = new GroupRobot('dingtalk');
-//设置 webhook 发送地址
-$webhook = 'https://oapi.dingtalk.com/robot/send?access_token=XXXXXX';
-$robot->to($webhook);
-```
-### 设置密钥
-> 当选择安全设置为【加签】时必须设置
-```php 
-$robot->secret('xxxx');
-```
 
 ### 原生消息
 ```php 
@@ -349,13 +355,13 @@ $robot->text('hello world')->atAll()->send();
 ```
 
 ```php 
-//@用户 第二个参数为true @全部
-$robot->text('hello world')->atUsers(["user123"],true)->send();
+//@用户 
+$robot->text('hello world')->atUsers(["user123"])->send();
 ```
 
 ```php 
-//@手机号,第二个参数为true @全部
-$robot->text('hello world')->atMobiles(["13800001111"],false)->send();
+//@手机号
+$robot->text('hello world')->atMobiles(["13800001111"])->send();
 ```
 
 ### Markdown
@@ -365,18 +371,28 @@ $robot->text('hello world')->atMobiles(["13800001111"],false)->send();
 ```php
 $robot->markdown("#### 杭州天气 \n > 9度，西北风1级，空气良89，相对温度73%\n > ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png) \n", '杭州天气')->send();
 ```
+```php
+$robot->markdown("at 全部用户 \n", 'at')->atAll()->send();
+```
+```php
+$robot->markdown("at 用户 \n", 'at')->atUsers(["user123"])->send();
+```
+```php
+$robot->markdown("at 手机 \n", 'at')->atMobiles(["13800001111"])->send();
+```
 
 ### 图片
 * 基于 Markdown 构建
-* 仅支持网络图片，不支持本地文件
+* 仅支持网络图片
+* 不支持本地图片
 ``` php
 $robot->image("https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png")->send();
-
 ```
 
 ### 文件
 * 基于 Markdown 构建
-* 仅支持网络文件，不支持本地文件
+* 仅支持网络文件
+* 不支持本地文件
 ``` php
 $robot->file("http://h10032.www1.hp.com/ctg/Manual/c05440029.pdf", "HP 2600打印机说明书.pdf")->send();
 ```
@@ -513,22 +529,16 @@ $robot->feedCard([
 
 //初始化并设置webhook
 $webhook = 'https://open.feishu.cn/open-apis/bot/v2/hook/XXXXXX';
-$robot = new GroupRobot('feishu',$webhook);
+$token = 'xxx';
+/**
+ * @param string $platform 发送平台，wechat:企业微信,dingtalk:钉钉,feishu:飞书
+ * @param string $webhook webhook 地址
+ * @param string $secret 秘钥,加密方式加签时必填
+ * @param string $alias 别名，多渠道发送时方便区分结果
+ */
+$robot = new GroupRobot('feishu',$webhook,$token,'feishu-1');
 ```
 
-```php
-$robot = new GroupRobot('feishu');
-//设置 webhook 发送地址
-$webhook = 'https://open.feishu.cn/open-apis/bot/v2/hook/XXXXXX';
-$robot->to($webhook);
-```
-### 设置密钥
-
-> 当选择安全设置为【加签】时必须设置
-
-```php 
-$robot->secret('xxxx');
-```
 
 ### 原生消息 
 ```php 
@@ -661,14 +671,14 @@ $robot->rich([
 ```php 
 $webhook = 'https://oapi.dingtalk.com/robot/send?access_token=xxxx';
 $secret = 'xxx';
-$result =app('grouprobot')->channel('dingtalk')->to($webhook)->secret($secret)->text('hello world')->send();
+$results = app('grouprobot')->queue()->text("Hello ")->text('Laravel')->cc('dingtalk',$webhook, $secret, 'ding_1')->send();
 dd($result);
 ```
 
 ------
 ## 进阶用法 
 
-### 使用队列同时发送多条消息
+### 使用「队列」同时发送多条消息
 * 使用 queue() 方法可以把消息放到队列中，分别发送
 ```php 
 $robot->queue()
@@ -678,23 +688,34 @@ $robot->queue()
   ->file("http://h10032.www1.hp.com/ctg/Manual/c05440029.pdf", "HP 2600打印机说明书.pdf")
   ->send();
 ```
+### 使用「抄送」功能向多个平台发送消息
+
+```php
+$robot = new GroupRobot();
+$robot->text("开始@".date('Y-m-d H:i:s',time()))
+      ->text("结束@".date('Y-m-d H:i:s',time()))
+      ->queue()
+      ->cc('dingtalk','https://oapi.dingtalk.com/robot/send?access_token==xxxx','xxx','ding1')
+      ->cc('wechat','https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxx','','wx_1')
+      ->cc('feishu','https://open.feishu.cn/open-apis/bot/v2/hook/xxxx','xxx','feishu1')
+      ->send();
+```
 
 
 
 
 
-
-### 定义渠道
-> 可以实现 src/Contracts/Channel.php 接口，通过自定义渠道发送消息
+### 定义平台
+> 可以实现 src/Contracts/Platform.php 接口，通过自定义平台发送消息
 ```php 
 <?php
 
 namespace App;
 
-use Ymlluo\GroupRobot\Contracts\Channel;
+use Ymlluo\GroupRobot\Contracts\Platform;
 use Ymlluo\GroupRobot\Notify\BaseNotify;
 
-class CustomerChannel extends BaseNotify implements Channel
+class CustomerPlatform extends BaseNotify implements Platform
 {
     // todo
 }
@@ -704,7 +725,8 @@ class CustomerChannel extends BaseNotify implements Channel
 ```php 
 $webhook = 'https://xxx.com/webhook/xxx';
 $robot = new GroupRobot();
-$robot->extendChannel(new CustomerChannel())->to($webhook)->text("hello !")->send();
+$custom = new CustomerPlatform(); 
+$robot->extendPlatform($custom,$webhook,$secret='',$alias='c1')->text("hello !")->send();
 ```
 ------
 

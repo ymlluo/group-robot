@@ -3,48 +3,60 @@
 
 namespace Ymlluo\GroupRobot\Notify;
 
+use Ymlluo\GroupRobot\Contracts\Platform;
 
-use Ymlluo\GroupRobot\Contracts\Channel;
-
-class Feishu extends BaseNotify implements Channel
+class Feishu extends BaseNotify implements Platform
 {
+    protected $platform = 'feishu';
 
+    /**
+     * 文本消息
+     *
+     * @param string $content
+     * @return $this|mixed
+     */
     public function text(string $content)
     {
-        $this->message_at_type = 'text';
         $this->message = [
             'msg_type' => 'text',
             'content' => [
                 'text' => $content
-            ],
-            'at_allow' => true,
-            'at_append' => 'concat'
+            ]
         ];
         $this->addQueue();
         return $this;
     }
 
+    /**
+     * 富文本消息
+     *
+     * @param array $data
+     * @return $this
+     */
     public function rich(array $data)
     {
-        $this->message_at_type = 'rich';
         $this->message = [
             'msg_type' => 'post',
             'content' => [
                 'post' => [
                     'zh_cn' => $data
                 ]
-            ],
-            'at_allow' => true,
-            'at_append' => 'merge'
+            ]
         ];
         $this->addQueue();
         return $this;
     }
 
 
+    /**
+     * markdown 消息
+     *
+     * @param string $markdown
+     * @param string $title
+     * @return $this|mixed
+     */
     public function markdown(string $markdown, string $title = '')
     {
-        $this->message_at_type = 'interactive';
         $this->message = [
             'msg_type' => 'interactive',
             'card' => [
@@ -75,7 +87,7 @@ class Feishu extends BaseNotify implements Channel
     }
 
     /**
-     * 发送文件
+     * 文件消息
      *
      * @param string $path
      * @param string $filename
@@ -83,11 +95,14 @@ class Feishu extends BaseNotify implements Channel
      */
     public function file(string $path, string $filename = '')
     {
+        if (!filter_var($path, FILTER_VALIDATE_URL)) {
+            return $this;
+        }
         return $this->markdown("[$filename]($path)", $filename);
     }
 
     /**
-     * 图片
+     * 图片消息
      *
      * @param string $path
      * @return mixed|void
@@ -95,17 +110,39 @@ class Feishu extends BaseNotify implements Channel
      */
     public function image(string $path)
     {
-        throw new \Exception("Unsupported message type");
+        if (!filter_var($path, FILTER_VALIDATE_URL)) {
+            return $this;
+        }
+        //todo 只能显示链接
+        return $this->markdown("[image]($path)");
     }
 
+    /**
+     * 图文消息
+     *
+     * @param array $news
+     * @return mixed|void
+     * @throws \Exception
+     */
     public function news(array $news)
     {
-        throw new \Exception("Unsupported message type");
+        //todo 需要解决 图片转 media id 的问题
     }
 
+    /**
+     * 卡片消息
+     *
+     * @param string $title
+     * @param string $description
+     * @param string $image
+     * @param string $url
+     * @param array $buttons
+     * @param array $extra
+     * @return $this|mixed
+     */
     public function card(string $title, string $description, string $image, string $url, array $buttons = [], array $extra = [])
     {
-        if ($buttons && !is_array(current($buttons))){
+        if ($buttons && !is_array(current($buttons))) {
             $buttons = [$buttons];
         }
         $this->message = [
@@ -172,42 +209,96 @@ class Feishu extends BaseNotify implements Channel
         return $this;
     }
 
+    /**
+     * @用户名
+     *
+     * @param array $userIds
+     * @param bool $isAll
+     * @return mixed|void
+     */
     public function atUsers(array $userIds, bool $isAll = false)
     {
         // TODO: Implement atUsers() method.
     }
 
+    /**
+     * @手机号
+     *
+     * @param array $phoneNums
+     * @param bool $isAll
+     * @return mixed|void
+     */
     public function atMobiles(array $phoneNums, bool $isAll = false)
     {
         // TODO: Implement atMobiles() method.
     }
 
+    /** @all */
     public function atAll(bool $isAll = true)
     {
-        switch ($this->message_at_type) {
+        switch ($this->message['msg_type']) {
             case 'text':
-                $this->message_at['content']['text'] = "<at user_id=\"all\">所有人</at>";
+                $this->message_at['text'] = "<at user_id=\"all\">所有人</at>";
                 break;
             case 'interactive':
-                foreach ($this->message['card']['elements'] as $i => $element) {
-                    if ($element['tag'] === 'markdown') {
-                        $this->message_at['card']['elements'][$i]['content'] = '<at id=all></at>';
-                    }
-                }
+                $this->message_at['interactive'] = '<at id=all></at>';
                 break;
-            case 'rich':
-                $this->message_at['content']['post']['zh_cn']['content'][0][2] = ['tag' => 'at', 'user_id' => 'all', 'user_name' => '所有人'];
+            case 'post':
+                $this->message_at['post'] = ['tag' => 'at', 'user_id' => 'all', 'user_name' => '所有人'];
                 break;
         }
         return $this;
     }
 
+    /**
+     * 合并 @xxx
+     */
+    public function concatAt()
+    {
+        switch ($this->message['msg_type']) {
+            case 'text':
+                $this->message['content']['text'] .= $this->message_at['text'];
+                break;
+            case 'interactive':
+                foreach ($this->message['card']['elements'] as $i => $element) {
+                    if ($element['tag'] === 'markdown') {
+                        $this->message['card']['elements'][$i]['content'] .= $this->message_at['interactive'];
+                        break;
+                    }
+                }
+                break;
+            case 'post':
+                $this->message['content']['post']['zh_cn']['content'][0][] = $this->message_at['post'];
+                break;
+        }
+    }
 
+
+    /**
+     * 消息签名
+     * @return mixed|void
+     */
     public function makeSignature()
     {
         $t = time();
         $sign = base64_encode(hash_hmac('sha256', '', $t . "\n" . $this->secret, true));
         $this->message['timestamp'] = strval($t);
         $this->message['sign'] = $sign;
+    }
+
+    /**
+     * 格式化结果
+     *
+     * @param array $result
+     * @return array
+     */
+    public function formatResult(array $result): array
+    {
+        $data = [];
+        if ($result) {
+            $data['errcode'] = $result['StatusCode'] ?? -19999;
+            $data['errmsg'] = $result['StatusMessage'] ?? '';
+        }
+        return $data;
     }
 }

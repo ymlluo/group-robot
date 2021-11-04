@@ -8,28 +8,67 @@ use GuzzleHttp\Client;
 
 class BaseNotify
 {
-    public $webhook;
+    /** @var string webhook url */
+    public $webhook = '';
 
-    public $message;
+    /** @var array 消息详情 */
+    public $message = [];
 
+    /** @var bool 使用队列发送 */
     public $use_queue = false;
 
+    /** @var array 消息队列缓存 */
     public $message_queues = [];
 
+    /** @var array @某人 */
     public $message_at = [];
 
-    public $message_at_type;
 
-    protected $secret;
+    /** @var string 平台名称 */
+    protected $platform = '';
 
-    public $result;
+    /** @var string 秘钥 */
+    protected $secret = '';
 
+    /** @var array 发送结果 */
+    public $result = [];
 
-    public function __construct()
+    /** @var string 机器人别名 */
+    public $alias = '';
+
+    /** @var string 机器人名称 */
+    public $name = '';
+
+    /**
+     * 平台别名
+     *
+     * @param string $name
+     * @return string
+     */
+    public function alias(string $name = '')
     {
-
+        if ($name) {
+            $this->alias = $name;
+        }
+        return $this->alias;
     }
 
+    /**
+     * 机器人名称
+     *
+     * @return string
+     */
+    public function platform(): string
+    {
+        return $this->platform;
+    }
+
+    /**
+     * 设置秘钥
+     *
+     * @param string $secret
+     * @return $this
+     */
     public function secret(string $secret)
     {
         $this->secret = $secret;
@@ -63,7 +102,7 @@ class BaseNotify
 
     protected function handleFile()
     {
-        throw new \Exception("channel handleFile function not set");
+        throw new \Exception("platform handleFile function not set");
     }
 
     public function queue()
@@ -72,11 +111,9 @@ class BaseNotify
         return $this;
     }
 
-    public function addQueue()
+    protected function addQueue()
     {
-        if ($this->use_queue) {
-            $this->message_queues[] = $this->message;
-        }
+        $this->message_queues[] = $this->message;
     }
 
 
@@ -111,36 +148,33 @@ class BaseNotify
         if ($this->secret) {
             $this->makeSignature();
         }
-        if ($this->message_queues) {
+        if ($this->use_queue && $this->message_queues) {
             $this->message = array_shift($this->message_queues);
+        } else {
+            $this->message_queues = [];
         }
         if (isset($this->message['file_queue'])) {
             $this->handleFile();
         }
-        if (!isset($this->message)) {
-            throw new \Exception('message not set!');
-        }
-
-        if (isset($this->message['at_allow']) && $this->message['at_allow']) {
+        $result = [];
+        if ($this->message) {
             if ($this->message_at) {
-                if (isset($this->message['at_append'])) {
-                    $concat = $this->message['at_append'] === 'concat';
-                    $this->array_append($this->message, $this->message_at, $concat);
-                }
-                if (isset($this->message['at_key'])) {
-                    $this->array_append($this->message, [$this->message['at_key'] => $this->message_at]);
-                }
+                $this->concatAt();
             }
-            unset($this->message['at_allow'], $this->message['at_key'], $this->message['at_concat'], $this->message['at_append']);
+            $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false, 'timeout' => 10]);
+            $result = $this->formatResult(json_decode((string)$response->getBody(), true));
         }
+        $this->result[] = [
+            'platform' => $this->platform(),
+            'alias' => $this->alias(),
+            'message' => $this->message,
+            'result' => $result
+        ];
 
-        $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false]);
-        $result = json_decode((string)$response->getBody(), true);
-        $this->result = $result;
-        if ($this->message_queues) {
+        if ($this->use_queue && $this->message_queues) {
             return $this->send();
         }
-        return $result;
+        return $this->result;
     }
 
     /**
@@ -153,44 +187,25 @@ class BaseNotify
         return $this->result;
     }
 
+    public function formatResult(array $result): array
+    {
+        $data = [];
+        if ($result) {
+            $data['errcode'] = $result['errcode'] ?? -19999;
+            $data['errmsg'] = $result['errmsg'] ?? '';
+        }
+        return $data;
+    }
+
     /**
+     * HTTP 客户端
+     *
      * @param array $config
      * @return Client
      */
     public function getClient($config = [])
     {
         return new Client($config);
-    }
-
-    /**
-     * 补充信息
-     *
-     * @param $array
-     * @param $append
-     * @param false $concat
-     */
-    protected function array_append(&$array, $append, $concat = false)
-    {
-        if (is_array($append)) {
-            foreach ($append as $k => $value) {
-                if (isset($array[$k])) {
-                    if (is_array($array[$k])) {
-                        $this->array_append($array[$k], $value, $concat);
-                    } else {
-                        if ($concat) {
-                            $array[$k] .= $value;
-                        }
-                    }
-                } else {
-                    if ($k === 0){
-                        $array[] = $value;
-                    }else{
-                        $array[$k] = $value;
-                    }
-                }
-            }
-        }
-
     }
 
     /**
@@ -201,7 +216,7 @@ class BaseNotify
      * @param string $separator
      * @return array
      */
-    protected function chunk_strings(string $string, int $maxLength, string $separator = "\n")
+    protected function chunkStrings(string $string, int $maxLength, string $separator = "\n"): array
     {
         do {
             $msg = substr($string, 0, $maxLength);
