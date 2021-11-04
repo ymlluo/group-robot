@@ -11,8 +11,6 @@ use Ymlluo\GroupRobot\Notify\Wechat;
  * Class GroupRobot
  * @package Ymlluo\GroupRobot
  *
- * @method  \Ymlluo\GroupRobot\GroupRobot secret(string $secret)
- * @method \Ymlluo\GroupRobot\GroupRobot to(string $webhook)
  * @method \Ymlluo\GroupRobot\GroupRobot raw(array $data)
  * @method \Ymlluo\GroupRobot\GroupRobot text(string $content)
  * @method \Ymlluo\GroupRobot\GroupRobot markdown(string $markdown, string $title = '')
@@ -59,9 +57,9 @@ class GroupRobot
             if (is_string($platform)) {
                 $this->platform = $this->resolve($platform);
             }
-            $this->platform->alias($alias);
-            $this->platform->to($webhook);
-            $this->platform->secret($secret);
+            $this->alias($alias);
+            $this->to($webhook);
+            $this->secret($secret);
         }
     }
 
@@ -75,6 +73,58 @@ class GroupRobot
     public function platform(string $name): GroupRobot
     {
         $this->platform = $this->resolve($name);
+        return $this;
+    }
+
+    /**
+     *  platform 的别名
+     *
+     * @param string $name
+     * @return $this
+     */
+    public function channel(string $name): GroupRobot
+    {
+        $this->platform = $this->resolve($name);
+        return $this;
+    }
+
+    /**
+     * 设置 webhook
+     * @param string $webhook
+     * @return $this
+     */
+    public function to(string $webhook)
+    {
+        if ($this->platform) {
+            $this->platform->to($webhook);
+        }
+        return $this;
+    }
+
+    /**
+     * 设置平台别名
+     *
+     * @param string $alias
+     * @return $this
+     */
+    public function alias(string $alias)
+    {
+        if ($this->platform) {
+            $this->platform->alias($alias);
+        }
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $secret
+     * @return $this
+     */
+    public function secret(string $secret)
+    {
+        if ($this->platform) {
+            $this->platform->secret($secret);
+        }
         return $this;
     }
 
@@ -178,9 +228,6 @@ class GroupRobot
         foreach ($this->buffers as $key => $buffer) {
             if (method_exists(get_class($this->platform), $buffer[0])) {
                 call_user_func_array([$this->platform, $buffer[0]], $buffer[1]);
-                if (in_array($buffer[0], ['secret', 'to', 'name', 'alias', 'result', 'atAll'])) {
-                    unset($this->buffers[$key]);
-                }
             }
         }
         $this->result = $this->platform->send();
