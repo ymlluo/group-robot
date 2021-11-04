@@ -43,7 +43,13 @@ class GroupRobot
 
     public $results = [];
 
-
+    /**
+     * GroupRobot constructor.
+     * @param string $platform 发送平台，wechat:企业微信,dingtalk:钉钉,feishu:飞书
+     * @param string $webhook webhook 地址
+     * @param string $secret 秘钥,加密方式加签时必填，企业微信不支持这个参数
+     * @param string $alias 别名，多渠道发送时方便区分结果
+     */
     public function __construct($platform = '', $webhook = '', $secret = '', $alias = '')
     {
         if ($platform) {
@@ -150,14 +156,14 @@ class GroupRobot
     /**
      * @param string $webhook
      * @param string $secret
-     * @param string $name
+     * @param string $platform 支持：wechat / dingtalk / feishu
      * @param string $alias
      * @return $this
      */
-    public function cc(string $webhook, string $secret = '', string $name = '', string $alias = '')
+    public function cc(string $webhook, string $secret = '', string $platform = '', string $alias = '')
     {
-        if ($name || $this->platform) {
-            $copy = new self($name ?: $this->platform->getName(), $webhook, $secret, $alias);
+        if ($platform || $this->platform) {
+            $copy = new self($platform ?: $this->platform->getName(), $webhook, $secret, $alias);
             $this->copies[] = $copy;
         }
 
@@ -171,6 +177,9 @@ class GroupRobot
      */
     public function send(): array
     {
+        if (!$this->platform && $this->copies) {
+            $this->platform = array_shift($this->copies)->platform;
+        }
         foreach ($this->buffers as $key => $buffer) {
             if (method_exists(get_class($this->platform), $buffer[0])) {
                 call_user_func_array([$this->platform, $buffer[0]], $buffer[1]);
@@ -180,12 +189,7 @@ class GroupRobot
             }
         }
         $this->result = $this->platform->send();
-        $this->results[] = [
-            'name' => $this->platform->getName(),
-            'alias' => $this->platform->getAlias(),
-            'message' => $this->message(),
-            'result' => $this->result()
-        ];
+        $this->results[] = $this->result;
         if ($this->copies) {
             $this->platform = array_shift($this->copies)->platform;
             $this->send();

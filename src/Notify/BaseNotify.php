@@ -185,12 +185,17 @@ class BaseNotify
         }
         $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false, 'timeout' => 10]);
         $result = json_decode((string)$response->getBody(), true);
-        $this->result = $result;
+        $this->result[] = [
+            'name' => $this->getName(),
+            'alias' => $this->getAlias(),
+            'message' => $this->message,
+            'result' => $result
+        ];
+
         if ($this->use_queue && $this->message_queues) {
             return $this->send();
         }
-
-        return $result;
+        return $this->result;
     }
 
     /**

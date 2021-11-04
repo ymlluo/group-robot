@@ -95,6 +95,9 @@ class Feishu extends BaseNotify implements Platform
      */
     public function file(string $path, string $filename = '')
     {
+        if (!filter_var($path,FILTER_VALIDATE_URL)){
+            return $this;
+        }
         return $this->markdown("[$filename]($path)", $filename);
     }
 
@@ -107,6 +110,10 @@ class Feishu extends BaseNotify implements Platform
      */
     public function image(string $path)
     {
+        if (!filter_var($path,FILTER_VALIDATE_URL)){
+            return $this;
+        }
+        //todo 只能显示链接
         return $this->markdown("[image]($path)");
     }
 
@@ -119,7 +126,7 @@ class Feishu extends BaseNotify implements Platform
      */
     public function news(array $news)
     {
-        throw new \Exception("Unsupported message type");
+        //todo 需要解决 图片转 media id 的问题
     }
 
     /**

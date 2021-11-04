@@ -39,7 +39,7 @@ class Dingtalk extends BaseNotify implements Platform
         $this->message = [
             'msgtype' => 'markdown',
             'markdown' => [
-                'title' => $title ?? "图文消息",
+                'title' => $title ?: "新消息",
                 'text' => $markdown
             ]
         ];
@@ -67,6 +67,11 @@ class Dingtalk extends BaseNotify implements Platform
      */
     public function image(string $path)
     {
+        if (!filter_var($path,FILTER_VALIDATE_URL) && file_exists($path)){
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $data = file_get_contents($path);
+            $path = 'data:image/' . $type . ';base64,' . base64_encode($data);
+        }
         return $this->markdown("![image]($path)", "图片消息");
     }
 
