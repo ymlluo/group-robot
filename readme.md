@@ -72,12 +72,22 @@ Table of Contents
 Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 
+
+
 # 安装
 
 Via Composer
 
 ``` bash
 $ composer require ymlluo/group-robot
+```
+## 升级 composer 版本 v2
+```bash
+ 
+sudo apt-get remove composer;
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');";
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');";
+composer self-update;
 ```
 
 # 使用说明
