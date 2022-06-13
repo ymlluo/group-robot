@@ -145,9 +145,6 @@ class BaseNotify
         if (!$this->webhook) {
             throw new \Exception('webhook not set');
         }
-        if ($this->secret) {
-            $this->makeSignature();
-        }
         if ($this->use_queue && $this->message_queues) {
             $this->message = array_shift($this->message_queues);
         } else {
@@ -160,6 +157,9 @@ class BaseNotify
         if ($this->message) {
             if ($this->message_at) {
                 $this->concatAt();
+            }
+            if ($this->secret) {
+                $this->makeSignature();
             }
             $response = $this->getClient()->post($this->webhook, ['json' => $this->message, 'http_errors' => false, 'verify' => false, 'timeout' => 10]);
             $result = $this->formatResult(json_decode((string)$response->getBody(), true));
